@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/toastate/toastfront/internal/tlogger"
 )
@@ -39,7 +40,7 @@ func (b *Builder) Init() error {
 
 	b.FileBuilders = map[string]FileBuilder{
 		"folder": &FolderBuilder{builder: b},
-		"css":    &CSSBuilder{builder: b},
+		"css":    &CSSBuilder{builder: b, baseFolder: "css"},
 	}
 
 	for _, v := range b.FileBuilders {
@@ -53,7 +54,10 @@ func (b *Builder) Init() error {
 }
 
 func (b *Builder) ShouldHandle(name string) bool {
-	folderList := filepath.SplitList(name)
+	folderList := strings.Split(name, string(filepath.Separator))
+	if folderList[0] == "vendor" {
+		return false
+	}
 	for _, v := range folderList {
 		if v == "includes" {
 			return false
@@ -91,9 +95,7 @@ func (b *Builder) Build() error {
 			tlogger.Error("msg", "Failed to get relative path", "path", path, "err", err)
 			return err
 		}
-		if err != nil {
-			return err
-		}
+
 		if b.ShouldHandle(path) {
 			for k, v := range b.FileBuilders {
 				if v.CanHandle(path, info) {

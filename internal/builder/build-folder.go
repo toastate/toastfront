@@ -22,18 +22,6 @@ func (fb *FolderBuilder) CanHandle(path string, file fs.FileInfo) bool {
 }
 
 func (fb *FolderBuilder) Process(path string, file fs.FileInfo) error {
-	fplist := strings.Split(path, string(filepath.Separator))
-	for _, v := range fplist {
-		if len(v) == 0 {
-			continue
-		}
-		if v[0] == '.' || v[0] == '_' {
-			return nil
-		}
-		if v == "includes" {
-			return nil
-		}
-	}
 
 	if *fb.builder.HTMLInSubFolder {
 		if path == "html" {

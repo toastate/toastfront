@@ -1,6 +1,8 @@
 package builder
 
-import "regexp"
+import (
+	"regexp"
+)
 
 var windowCRregexp = regexp.MustCompile(`\r?\n`)
 

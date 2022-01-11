@@ -16,9 +16,10 @@ import (
 var CSSBuilderImportRegexp = regexp.MustCompile(`(?m)^@import "local:\/\/(.*)";$`)
 
 type CSSBuilder struct {
-	builder *Builder
-	depth   int
-	data    map[string]interface{}
+	baseFolder string
+	builder    *Builder
+	depth      int
+	data       map[string]interface{}
 }
 
 func (cb *CSSBuilder) Init() error {
@@ -31,18 +32,22 @@ func (cb *CSSBuilder) CanHandle(path string, file fs.FileInfo) bool {
 }
 
 func (cb *CSSBuilder) IsCssFile(path string, file fs.FileInfo) bool {
+	pathSplit := strings.Split(path, string(filepath.Separator))
+	if pathSplit[0] != cb.baseFolder {
+		return false
+	}
 	return filepath.Ext(file.Name()) == ".css"
 }
 
-func (bb *CSSBuilder) Process(path string, file fs.FileInfo) error {
+func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 	tlogger.Debug("builder", "css", "msg", "processing", "file", path)
 
-	f, err := bb.ProcessAsByte(path, file)
+	f, err := cb.ProcessAsByte(path, file)
 	if err != nil {
 		return err
 	}
 
-	of, err := os.OpenFile(filepath.Join(bb.builder.BuildDir, path), os.O_CREATE|os.O_RDWR, 0644)
+	of, err := os.OpenFile(filepath.Join(cb.builder.BuildDir, path), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "output file creation", "file", path, "err", err)
 		return err
@@ -53,7 +58,7 @@ func (bb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 
 	t, err := template.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
 
-	err = t.Execute(wr, bb.data)
+	err = t.Execute(wr, cb.data)
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "templater", "file", path, "err", err)
 		return err
@@ -62,12 +67,12 @@ func (bb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 	return nil
 }
 
-func (bb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error) {
-	if bb.depth > 5 {
+func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error) {
+	if cb.depth > 5 {
 		tlogger.Debug("builder", "css", "msg", "file error", "file", path, "err", "reached max recursion depth of 5, import loop ?")
 		return nil, errors.New("Too deep")
 	}
-	f, err := ioutil.ReadFile(filepath.Join(bb.builder.SrcDir, path))
+	f, err := ioutil.ReadFile(filepath.Join(cb.builder.SrcDir, path))
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "file error", "file", path, "err", err)
 		return nil, err
@@ -82,34 +87,35 @@ func (bb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 
 		if p[0] == os.PathSeparator {
 			p = p[1:]
-		} else {
-			p = filepath.Join(filepath.Dir(path), p)
 		}
 
-		fileData, err := os.Stat(filepath.Join(bb.builder.SrcDir, p))
+		p = filepath.Join(cb.baseFolder, p)
+
+		fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
 		if err != nil {
 			tlogger.Error("builder", "css", "msg", "file error import", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
 		}
 
-		if !bb.IsCssFile(p, fileData) {
+		if !cb.IsCssFile(p, fileData) {
 			tlogger.Error("builder", "css", "msg", "file error import", "sourcefile", path, "expectedfile", p, "err", "import types mismatched")
 			return []byte{'\n'}
 		}
 
-		nestedBB := &CSSBuilder{
-			builder: bb.builder,
-			depth:   bb.depth + 1,
-			data:    bb.data,
+		nestedCB := &CSSBuilder{
+			baseFolder: cb.baseFolder,
+			builder:    cb.builder,
+			depth:      cb.depth + 1,
+			data:       cb.data,
 		}
 
-		if _, ok := bb.builder.FileDeps[p]; ok {
-			bb.builder.FileDeps[p][path] = struct{}{}
+		if _, ok := cb.builder.FileDeps[p]; ok {
+			cb.builder.FileDeps[p][path] = struct{}{}
 		} else {
-			bb.builder.FileDeps[p] = map[string]struct{}{path: {}}
+			cb.builder.FileDeps[p] = map[string]struct{}{path: {}}
 		}
 
-		c, err := nestedBB.ProcessAsByte(p, fileData)
+		c, err := nestedCB.ProcessAsByte(p, fileData)
 		if err != nil {
 			tlogger.Error("builder", "css", "msg", "file error process", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
