@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/toastate/toastfront/internal/builder"
 	"github.com/toastate/toastfront/internal/tlogger"
 )
@@ -34,7 +33,7 @@ func main() {
 	ctx := kong.Parse(&CLI, kong.UsageOnError())
 
 	err := ctx.Run(ctx)
-	spew.Dump(err)
+
 	if err != nil {
 		ctx.PrintUsage(false)
 	}

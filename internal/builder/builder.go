@@ -14,12 +14,21 @@ func (b *Builder) Init() error {
 	if b.RootFolder == "" {
 		b.RootFolder = "."
 	}
+	if b.ConfigFile == "" {
+		b.ConfigFile = "toastfront.json"
+	}
+	err := b.ReadConfig()
+	if err != nil {
+		return err
+	}
+
 	if b.BuildDir == "" {
-		b.BuildDir = filepath.Join(b.RootFolder, "build")
+		b.BuildDir = filepath.Join(b.RootFolder, b.Config.BuildDir)
 	}
 	if b.SrcDir == "" {
-		b.SrcDir = filepath.Join(b.RootFolder, "src")
+		b.SrcDir = filepath.Join(b.RootFolder, b.Config.SrcDir)
 	}
+
 	if b.FileDeps == nil {
 		b.FileDeps = make(map[string]map[string]struct{})
 	}
@@ -29,18 +38,22 @@ func (b *Builder) Init() error {
 		return errors.New("Src folder not found")
 	}
 
-	if b.HTMLInSubFolder == nil {
-		n := true
-		if _, err := os.Stat(filepath.Join(b.SrcDir, "html")); os.IsNotExist(err) {
-
-			n = false
+	if b.HTMLDirectory == nil {
+		if b.Config.HTMLDir != "." {
+			if b.Config.HTMLDir == "" { // Auto detect
+				if f, _ := os.Stat(filepath.Join(b.SrcDir, "html")); f != nil && f.IsDir() {
+					a := "html"
+					b.HTMLDirectory = &a
+				}
+			} else { // Use config value
+				b.HTMLDirectory = &b.Config.HTMLDir
+			}
 		}
-		b.HTMLInSubFolder = &n
 	}
 
 	b.FileBuilders = map[string]FileBuilder{
 		"folder": &FolderBuilder{builder: b},
-		"css":    &CSSBuilder{builder: b, baseFolder: "css"},
+		"css":    &CSSBuilder{builder: b},
 	}
 
 	for _, v := range b.FileBuilders {
@@ -86,7 +99,8 @@ func (b *Builder) Build() error {
 		return err
 	}
 
-	tlogger.Info("msg", "Building", "path", b.SrcDir)
+	tlogger.Info("msg", "Building started", "path", b.SrcDir)
+	defer tlogger.Info("msg", "Building finished", "path", b.SrcDir)
 
 	err = filepath.Walk(b.SrcDir, func(absolutepath string, info fs.FileInfo, err error) error {
 

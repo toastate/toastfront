@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"errors"
 	"html/template"
 	"io/fs"
@@ -16,14 +17,47 @@ import (
 var CSSBuilderImportRegexp = regexp.MustCompile(`(?m)^@import "local:\/\/(.*)";$`)
 
 type CSSBuilder struct {
-	baseFolder string
-	builder    *Builder
-	depth      int
-	data       map[string]interface{}
+	builder *Builder
+	depth   int // To avoid infinite recursive imports
+	data    map[string]interface{}
+
+	extension string
+	folder    string
+	varsFile  string
 }
 
 func (cb *CSSBuilder) Init() error {
 	tlogger.Debug("builder", "css", "msg", "init")
+
+	cb.varsFile = "config.json"
+	cb.folder = "css"
+	cb.extension = ".css"
+
+	if cssData, ok := cb.builder.Config.BuilderConfig["css"]; ok {
+		if data, ok := cssData["vars_file"]; ok {
+			cb.varsFile = data
+		}
+		if data, ok := cssData["folder"]; ok {
+			cb.folder = data
+		}
+		if data, ok := cssData["extension"]; ok {
+			cb.extension = data
+		}
+	}
+
+	varsPath := filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFile)
+	f, err := os.Open(varsPath)
+	if err != nil {
+		tlogger.Warn("builder", "css", "msg", "Can't open css vars file", "file", varsPath, "err", err)
+	} else {
+		defer f.Close()
+		err = json.NewDecoder(f).Decode(&cb.data)
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "Can't decode css vars file", "file", varsPath, "err", err)
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -33,10 +67,10 @@ func (cb *CSSBuilder) CanHandle(path string, file fs.FileInfo) bool {
 
 func (cb *CSSBuilder) IsCssFile(path string, file fs.FileInfo) bool {
 	pathSplit := strings.Split(path, string(filepath.Separator))
-	if pathSplit[0] != cb.baseFolder {
+	if pathSplit[0] != cb.folder {
 		return false
 	}
-	return filepath.Ext(file.Name()) == ".css"
+	return filepath.Ext(file.Name()) == cb.extension
 }
 
 func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
@@ -89,7 +123,7 @@ func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 			p = p[1:]
 		}
 
-		p = filepath.Join(cb.baseFolder, p)
+		p = filepath.Join(cb.folder, p)
 
 		fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
 		if err != nil {
@@ -103,10 +137,12 @@ func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 		}
 
 		nestedCB := &CSSBuilder{
-			baseFolder: cb.baseFolder,
-			builder:    cb.builder,
-			depth:      cb.depth + 1,
-			data:       cb.data,
+			folder:    cb.folder,
+			extension: cb.extension,
+			varsFile:  cb.varsFile,
+			builder:   cb.builder,
+			depth:     cb.depth + 1,
+			data:      cb.data,
 		}
 
 		if _, ok := cb.builder.FileDeps[p]; ok {

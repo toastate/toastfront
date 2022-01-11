@@ -22,13 +22,12 @@ func (fb *FolderBuilder) CanHandle(path string, file fs.FileInfo) bool {
 }
 
 func (fb *FolderBuilder) Process(path string, file fs.FileInfo) error {
-
-	if *fb.builder.HTMLInSubFolder {
-		if path == "html" {
+	if fb.builder.HTMLDirectory != nil {
+		if path == *fb.builder.HTMLDirectory {
 			return nil
 		}
-		if strings.HasPrefix(path, "html/") {
-			path = path[5:]
+		if strings.HasPrefix(path, *fb.builder.HTMLDirectory+"/") {
+			path = path[len(*fb.builder.HTMLDirectory)+1:]
 		}
 	}
 
