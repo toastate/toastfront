@@ -10,12 +10,21 @@ type Builder struct {
 	BuildDir   string
 	SrcDir     string
 
+	CurrentLanguage string
+
 	HTMLDirectory *string
 
 	Config       *MainConf
 	FileBuilders map[string]FileBuilder
 
 	FileDeps map[string]map[string]struct{}
+
+	SubBuilders map[string]*Builder // Used in multi lang scenarios
+}
+
+type BuildEnv struct {
+	Lang           string
+	AvaliableLangs []string
 }
 
 type FileBuilder interface {

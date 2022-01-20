@@ -14,7 +14,7 @@ import (
 	"github.com/toastate/toastfront/internal/tlogger"
 )
 
-var CSSBuilderImportRegexp = regexp.MustCompile(`(?m)^@import "local:\/\/(.*)";$`)
+var CSSBuilderImportRegexp = regexp.MustCompile(`(?m)^\s*@import "local:\/\/(.*)";\s*$`)
 
 type CSSBuilder struct {
 	builder *Builder
@@ -29,7 +29,7 @@ type CSSBuilder struct {
 func (cb *CSSBuilder) Init() error {
 	tlogger.Debug("builder", "css", "msg", "init")
 
-	cb.varsFile = "config.json"
+	cb.varsFile = "vars.json"
 	cb.folder = "css"
 	cb.extension = ".css"
 
@@ -40,7 +40,7 @@ func (cb *CSSBuilder) Init() error {
 		if data, ok := cssData["folder"]; ok {
 			cb.folder = data
 		}
-		if data, ok := cssData["extension"]; ok {
+		if data, ok := cssData["ext"]; ok {
 			cb.extension = data
 		}
 	}

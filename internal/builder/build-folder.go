@@ -11,9 +11,18 @@ import (
 
 type FolderBuilder struct {
 	builder *Builder
+
+	htmlVarsFolder string
 }
 
 func (fb *FolderBuilder) Init() error {
+	fb.htmlVarsFolder = "vars"
+
+	if htmlData, ok := fb.builder.Config.BuilderConfig["html"]; ok {
+		if data, ok := htmlData["vars_folder"]; ok {
+			fb.htmlVarsFolder = data
+		}
+	}
 	return nil
 }
 
@@ -21,14 +30,27 @@ func (fb *FolderBuilder) CanHandle(path string, file fs.FileInfo) bool {
 	return file.IsDir()
 }
 
-func (fb *FolderBuilder) Process(path string, file fs.FileInfo) error {
+func (fb *FolderBuilder) RewritePath(path string) string {
 	if fb.builder.HTMLDirectory != nil {
 		if path == *fb.builder.HTMLDirectory {
-			return nil
+			return ""
 		}
 		if strings.HasPrefix(path, *fb.builder.HTMLDirectory+"/") {
 			path = path[len(*fb.builder.HTMLDirectory)+1:]
 		}
+	}
+
+	if strings.HasPrefix(path, fb.htmlVarsFolder+"/") {
+		return ""
+	}
+
+	return path
+}
+
+func (fb *FolderBuilder) Process(path string, file fs.FileInfo) error {
+	path = fb.RewritePath(path)
+	if path == "" {
+		return nil
 	}
 
 	newFolder := filepath.Join(fb.builder.BuildDir, path)

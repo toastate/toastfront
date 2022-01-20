@@ -20,10 +20,10 @@ var DefaultMainConf = &MainConf{
 	BuildDir:     "build",
 	SrcDir:       "src",
 	RootLanguage: "en",
-	HTMLDir:      "html",
 	Languages: []string{
 		"en",
 	},
+	HTMLDir: "html",
 	BuilderConfig: map[string]map[string]string{
 		"css": {
 			"ext":       ".css",
@@ -34,7 +34,8 @@ var DefaultMainConf = &MainConf{
 			"folder": "vendor",
 		},
 		"html": {
-			"folder": "html",
+			"ext":         ".html",
+			"vars_folder": "vars",
 		},
 		"javascript": {
 			"folder": "js",

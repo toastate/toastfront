@@ -22,6 +22,10 @@ func (b *Builder) Init() error {
 		return err
 	}
 
+	if b.CurrentLanguage == "" {
+		b.CurrentLanguage = b.Config.RootLanguage
+	}
+
 	if b.BuildDir == "" {
 		b.BuildDir = filepath.Join(b.RootFolder, b.Config.BuildDir)
 	}
@@ -54,6 +58,7 @@ func (b *Builder) Init() error {
 	b.FileBuilders = map[string]FileBuilder{
 		"folder": &FolderBuilder{builder: b},
 		"css":    &CSSBuilder{builder: b},
+		"html":   &HTMLBuilder{builder: b},
 	}
 
 	for _, v := range b.FileBuilders {
@@ -118,6 +123,21 @@ func (b *Builder) Build() error {
 						tlogger.Error("msg", "Error processing file", "builder", k, "path", path, "error", err)
 						return err
 					}
+
+					break
+				}
+			}
+		}
+
+		for _, subBuilder := range b.SubBuilders {
+			for k, v := range subBuilder.FileBuilders {
+				if v.CanHandle(path, info) {
+					err = v.Process(path, info)
+					if err != nil {
+						tlogger.Error("msg", "Error processing file", "builder", k, "path", path, "error", err)
+						return err
+					}
+
 					break
 				}
 			}
