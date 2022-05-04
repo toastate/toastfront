@@ -11,6 +11,7 @@ type MainConf struct {
 	BuildDir      string                       `json:"build_directory,omitempty"`
 	SrcDir        string                       `json:"source_directory,omitempty"`
 	HTMLDir       string                       `json:"html_directory,omitempty"`
+	VarsDir       string                       `json:"vars_directory,omitempty"`
 	RootLanguage  string                       `json:"root_language,omitempty"`
 	Languages     []string                     `json:"languages,omitempty"`
 	BuilderConfig map[string]map[string]string `json:"builder_config,omitempty"`
@@ -24,6 +25,7 @@ var DefaultMainConf = &MainConf{
 		"en",
 	},
 	HTMLDir: "html",
+	VarsDir: "html/vars",
 	BuilderConfig: map[string]map[string]string{
 		"css": {
 			"ext":       ".css",
@@ -34,8 +36,7 @@ var DefaultMainConf = &MainConf{
 			"folder": "vendor",
 		},
 		"html": {
-			"ext":         ".html",
-			"vars_folder": "vars",
+			"ext": ".html",
 		},
 		"javascript": {
 			"folder": "js",

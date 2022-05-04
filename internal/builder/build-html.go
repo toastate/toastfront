@@ -30,31 +30,28 @@ type HTMLBuilder struct {
 func (cb *HTMLBuilder) Init() error {
 	tlogger.Debug("builder", "html", "msg", "init")
 
-	cb.varsFolder = DefaultMainConf.BuilderConfig["html"]["vars_folder"]
+	cb.varsFolder = DefaultMainConf.VarsDir
 	cb.folder = DefaultMainConf.HTMLDir
 	cb.extension = DefaultMainConf.BuilderConfig["html"]["ext"]
 
+	cb.folder = *cb.builder.HTMLDirectory
+
+	if cb.builder.VarsDirectory != nil {
+		cb.varsFolder = *cb.builder.VarsDirectory
+		if cb.varsFolder == "." {
+			cb.varsFolder = ""
+		}
+	}
+
 	if htmlData, ok := cb.builder.Config.BuilderConfig["html"]; ok {
-		if data, ok := htmlData["vars_folder"]; ok {
-			cb.varsFolder = data
-		}
-		if cb.builder.HTMLDirectory != nil {
-			cb.folder = *cb.builder.HTMLDirectory
-			if cb.folder == "." {
-				cb.folder = ""
-			}
-		}
+
 		if data, ok := htmlData["ext"]; ok {
 			cb.extension = data
 		}
 	}
 
-	varsPath := ""
-	if cb.folder != "" {
-		varsPath = filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFolder)
-	} else {
-		varsPath = filepath.Join(cb.builder.SrcDir, cb.varsFolder)
-	}
+	varsPath := filepath.Join(cb.builder.SrcDir, cb.varsFolder)
+
 	{
 		varsFile := filepath.Join(varsPath, "common.json")
 		f, err := os.Open(varsFile)
@@ -111,13 +108,17 @@ func (cb *HTMLBuilder) RewritePath(path string) string {
 }
 
 func (cb *HTMLBuilder) GetPathData(path string) map[string]interface{} {
+	varsDir := path[:len(path)-len(cb.extension)]
+	return cb.GetPathDataDir(varsDir)
+}
+
+func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 	out := make(map[string]interface{})
 	{
 		bt, _ := json.Marshal(cb.baseData)
 		json.Unmarshal(bt, &out)
 	}
 
-	varsDir := path[:len(path)-len(cb.extension)]
 	varsPath := ""
 	if cb.folder != "" {
 		varsPath = filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFolder, varsDir)

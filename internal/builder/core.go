@@ -13,6 +13,7 @@ type Builder struct {
 	CurrentLanguage string
 
 	HTMLDirectory *string
+	VarsDirectory *string
 
 	Config       *MainConf
 	FileBuilders map[string]FileBuilder

@@ -35,6 +35,12 @@ func (fb *FolderBuilder) RewritePath(path string) string {
 		if path == *fb.builder.HTMLDirectory {
 			return ""
 		}
+		if path == *fb.builder.VarsDirectory {
+			return ""
+		}
+		if strings.HasPrefix(path, *fb.builder.VarsDirectory+"/") {
+			return ""
+		}
 		if strings.HasPrefix(path, *fb.builder.HTMLDirectory+"/") {
 			path = path[len(*fb.builder.HTMLDirectory)+1:]
 		}

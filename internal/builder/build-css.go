@@ -156,7 +156,7 @@ func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 			tlogger.Error("builder", "css", "msg", "file error process", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
 		}
-		if c[len(c)-1] != '\n' {
+		if len(c) == 0 || c[len(c)-1] != '\n' {
 			c = append(c, '\n')
 		}
 

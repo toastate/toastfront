@@ -52,6 +52,18 @@ func (b *Builder) Init() error {
 			} else { // Use config value
 				b.HTMLDirectory = &b.Config.HTMLDir
 			}
+		} else {
+			a := ""
+			b.HTMLDirectory = &a
+		}
+	}
+
+	if b.VarsDirectory == nil {
+		if b.Config.VarsDir == "" {
+			a := "html/vars"
+			b.VarsDirectory = &a
+		} else { // Use config value
+			b.VarsDirectory = &b.Config.VarsDir
 		}
 	}
 
@@ -59,6 +71,7 @@ func (b *Builder) Init() error {
 		"folder": &FolderBuilder{builder: b},
 		"css":    &CSSBuilder{builder: b},
 		"html":   &HTMLBuilder{builder: b},
+		"js":     &JSBuilder{builder: b},
 	}
 
 	for _, v := range b.FileBuilders {
