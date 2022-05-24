@@ -14,7 +14,7 @@ import (
 )
 
 var JSBuilderImportRegexp = regexp.MustCompile(`(?m)^import "local:\/\/(.*)";$`)
-var JSBuilderImportFuncRegexp = regexp.MustCompile(`(?m)toastfront\.pagevars\(\)`)
+var JSBuilderImportFuncRegexp = regexp.MustCompile(`(?m)toastfront\.pagevars\((.+)\)`)
 
 type JSBuilder struct {
 	builder *Builder
@@ -23,19 +23,19 @@ type JSBuilder struct {
 
 	extension string
 	folder    string
-	varsFile  string
+	VarsFile  string
 }
 
 func (cb *JSBuilder) Init() error {
 	tlogger.Debug("builder", "js", "msg", "init")
 
-	cb.varsFile = "vars.json"
+	cb.VarsFile = "vars.json"
 	cb.folder = "js"
 	cb.extension = ".js"
 
 	if jsData, ok := cb.builder.Config.BuilderConfig["js"]; ok {
 		if data, ok := jsData["vars_file"]; ok {
-			cb.varsFile = data
+			cb.VarsFile = data
 		}
 		if data, ok := jsData["folder"]; ok {
 			cb.folder = data
@@ -45,7 +45,7 @@ func (cb *JSBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFile)
+	varsPath := filepath.Join(cb.builder.SrcDir, cb.folder, cb.VarsFile)
 	f, err := os.Open(varsPath)
 	if err != nil {
 		tlogger.Warn("builder", "js", "msg", "Can't open js vars file", "file", varsPath, "err", err)
@@ -140,7 +140,7 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 		nestedCB := &JSBuilder{
 			folder:    cb.folder,
 			extension: cb.extension,
-			varsFile:  cb.varsFile,
+			VarsFile:  cb.VarsFile,
 			builder:   cb.builder,
 			depth:     cb.depth + 1,
 			data:      cb.data,
@@ -167,14 +167,14 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 	f = JSBuilderImportFuncRegexp.ReplaceAllFunc(f, func(match []byte) []byte {
 		p := string(JSBuilderImportFuncRegexp.FindSubmatch(match)[1])
 
+		p = strings.Trim(p, "\"")
+		p = strings.Trim(p, "'")
+
 		p = strings.ReplaceAll(p, "/", string(os.PathSeparator))
 
 		if p[0] == os.PathSeparator {
 			p = p[1:]
 		}
-
-		p = strings.Trim(p, "\"")
-		p = strings.Trim(p, "'")
 
 		htmlBuilder := cb.builder.FileBuilders["html"].(*HTMLBuilder)
 		pathData := htmlBuilder.GetPathDataDir(p)

@@ -72,9 +72,18 @@ func (b *Builder) Init() error {
 		"css":    &CSSBuilder{builder: b},
 		"html":   &HTMLBuilder{builder: b},
 		"js":     &JSBuilder{builder: b},
+		// "vendor": &VendorBuilder{builder: b},
+		"copy": &CopyBuilder{builder: b},
+	}
+	b.FileBuildersArray = []FileBuilder{
+		b.FileBuilders["folder"],
+		b.FileBuilders["css"],
+		b.FileBuilders["html"],
+		b.FileBuilders["js"],
+		b.FileBuilders["copy"],
 	}
 
-	for _, v := range b.FileBuilders {
+	for _, v := range b.FileBuildersArray {
 		err := v.Init()
 		if err != nil {
 			return err
@@ -86,9 +95,6 @@ func (b *Builder) Init() error {
 
 func (b *Builder) ShouldHandle(name string) bool {
 	folderList := strings.Split(name, string(filepath.Separator))
-	if folderList[0] == "vendor" {
-		return false
-	}
 	for _, v := range folderList {
 		if v == "includes" {
 			return false
@@ -129,11 +135,11 @@ func (b *Builder) Build() error {
 		}
 
 		if b.ShouldHandle(path) {
-			for k, v := range b.FileBuilders {
+			for _, v := range b.FileBuildersArray {
 				if v.CanHandle(path, info) {
 					err = v.Process(path, info)
 					if err != nil {
-						tlogger.Error("msg", "Error processing file", "builder", k, "path", path, "error", err)
+						tlogger.Error("msg", "Error processing file", "path", path, "error", err)
 						return err
 					}
 

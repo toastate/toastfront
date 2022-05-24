@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/toastate/toastfront/internal/tlogger"
 )
 
@@ -120,14 +119,11 @@ func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 	}
 
 	varsPath := ""
-	if cb.folder != "" {
-		varsPath = filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFolder, varsDir)
-	} else {
-		varsPath = filepath.Join(cb.builder.SrcDir, cb.varsFolder, varsDir)
-	}
+	varsPath = filepath.Join(cb.builder.SrcDir, cb.varsFolder, varsDir)
 
 	{
 		varsFile := filepath.Join(varsPath, "common.json")
+
 		f, err := os.Open(varsFile)
 		if err == nil {
 			secondaryOut := make(map[string]interface{})
@@ -143,6 +139,7 @@ func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 	}
 
 	{
+
 		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.CurrentLanguage+".json")
 		f, err := os.Open(varsFile)
 		if err == nil {
@@ -207,7 +204,6 @@ func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, err
 	f = replaceWindowsCarriageReturn(f)
 
 	f = HTMLBuilderImportRegexp.ReplaceAllFunc(f, func(match []byte) []byte {
-		spew.Dump("replaceall")
 		p := string(HTMLBuilderImportRegexp.FindSubmatch(match)[1])
 
 		p = strings.ReplaceAll(p, "/", string(os.PathSeparator))
@@ -246,7 +242,6 @@ func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, err
 			cb.builder.FileDeps[p] = map[string]struct{}{path: {}}
 		}
 
-		spew.Dump("Nested:", p)
 		c, err := nestedCB.ProcessAsByte(p, fileData)
 		if err != nil {
 			tlogger.Error("builder", "html", "msg", "file error process", "sourcefile", path, "expectedfile", p, "err", err)

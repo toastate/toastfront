@@ -16,6 +16,8 @@ type FolderBuilder struct {
 }
 
 func (fb *FolderBuilder) Init() error {
+	tlogger.Debug("builder", "folder", "msg", "init")
+
 	fb.htmlVarsFolder = "vars"
 
 	if htmlData, ok := fb.builder.Config.BuilderConfig["html"]; ok {

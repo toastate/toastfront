@@ -35,6 +35,9 @@ var DefaultMainConf = &MainConf{
 		"vendor": {
 			"folder": "vendor",
 		},
+		"assets": {
+			"folder": "assets",
+		},
 		"html": {
 			"ext": ".html",
 		},

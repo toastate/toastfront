@@ -15,8 +15,9 @@ type Builder struct {
 	HTMLDirectory *string
 	VarsDirectory *string
 
-	Config       *MainConf
-	FileBuilders map[string]FileBuilder
+	Config            *MainConf
+	FileBuilders      map[string]FileBuilder
+	FileBuildersArray []FileBuilder
 
 	FileDeps map[string]map[string]struct{}
 
