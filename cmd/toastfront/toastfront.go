@@ -2,10 +2,13 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/toastate/toastfront/internal/builder"
+	"github.com/toastate/toastfront/internal/server"
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/internal/watcher"
 )
 
 var CLI struct {
@@ -56,8 +59,8 @@ func (r *CommandBuild) Run(ctx *kong.Context) error {
 	if r.SrcDir == "" {
 		r.SrcDir = "src"
 	}
-	if r.SrcDir == "" {
-		r.SrcDir = "build"
+	if r.BuildDir == "" {
+		r.BuildDir = "build"
 	}
 
 	buildtool := builder.Builder{
@@ -77,6 +80,49 @@ func (r *CommandBuild) Run(ctx *kong.Context) error {
 
 func (r *CommandServe) Run(ctx *kong.Context) error {
 	applyVerbose(r.Verbose)
+
+	if r.SrcDir == "" {
+		r.SrcDir = "src"
+	}
+	if r.BuildDir == "" {
+		r.BuildDir = "build"
+	}
+
+	buildtool := builder.Builder{
+		SrcDir:     r.SrcDir,
+		BuildDir:   r.BuildDir,
+		RootFolder: ".",
+	}
+
+	err := buildtool.Build()
+
+	if err != nil {
+		os.Exit(1)
+	}
+
+	updates := watcher.StartWatcher(r.SrcDir)
+
+	go func() {
+		for {
+			_ = <-updates
+		rootFor:
+			for {
+				select {
+				case <-updates:
+					continue
+				case <-time.After(time.Millisecond * 500):
+					break rootFor
+				}
+			}
+			buildtool.Build()
+		}
+	}()
+	// Start file change listener
+	// Builder: add dep tree
+	// Check dependancy tree on update & rebuild
+	// k: Start server
+
+	server.Start(r.BuildDir, "8100")
 
 	return nil
 }
