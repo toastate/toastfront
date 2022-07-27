@@ -94,7 +94,13 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 		RootFolder: ".",
 	}
 
+	buildStart := time.Now()
 	err := buildtool.Build()
+	estBuildTime := time.Now().Sub(buildStart)
+	estBuildTime *= 2
+	if estBuildTime > time.Millisecond*500 {
+		estBuildTime = time.Millisecond * 500
+	}
 
 	if err != nil {
 		os.Exit(1)
@@ -115,6 +121,7 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 				}
 			}
 			buildtool.Build()
+			server.TriggerReload()
 		}
 	}()
 	// Start file change listener

@@ -24,6 +24,13 @@ func (m *TDMinifier) Writer(mediatype string, out io.WriteCloser) io.WriteCloser
 	return m.Minifier.Writer(mediatype, out)
 }
 
+type NOOPMinifier struct {
+}
+
+func (m *NOOPMinifier) Writer(mediatype string, out io.WriteCloser) io.WriteCloser {
+	return out
+}
+
 func init() {
 	minifier := minify.New()
 	minifier.AddFunc("text/css", css.Minify)

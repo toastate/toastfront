@@ -14,7 +14,7 @@ import (
 	"github.com/toastate/toastfront/internal/tlogger"
 )
 
-var HTMLBuilderImportRegexp = regexp.MustCompile(`(?m)^<!--#import\s+(.*)\s*-->`)
+var HTMLBuilderImportRegexp = regexp.MustCompile(`(?m)<!--\s*#import\s+(.*)\s*-->`)
 
 type HTMLBuilder struct {
 	builder  *Builder
@@ -180,6 +180,10 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 
 	t, err := template.New(path).Delims(`<!--#`, `-->`).Parse(string(f))
 
+	if err != nil {
+		tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
+		return err
+	}
 	pathData := cb.GetPathData(path)
 	err = t.Execute(wr, pathData)
 	if err != nil {

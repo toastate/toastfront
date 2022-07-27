@@ -88,11 +88,15 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 	}
 	defer of.Close()
 
-	wr := filewriter.Writer("text/css", of)
+	// wr := filewriter.Writer("text/css", of)
 
 	t, err := template.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
+	if err != nil {
+		tlogger.Error("builder", "css", "msg", "temple", "file", path, "err", err)
+		return err
+	}
 
-	err = t.Execute(wr, cb.data)
+	err = t.Execute(of, cb.data)
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "templater", "file", path, "err", err)
 		return err
