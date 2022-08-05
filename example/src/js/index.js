@@ -1,0 +1,1 @@
+var commonVars = toastfront.pagevars("index.html")

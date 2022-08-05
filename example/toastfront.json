@@ -1,0 +1,31 @@
+{
+    "build_directory": "build",
+    "source_directory": "src",
+    "html_directory": "html",
+    "languages": [
+        "en",
+        "fr"
+    ],
+    "root_language": "fr",
+    "builder_config": {
+        "css": {
+            "exe": ".css",
+            "folder": "css",
+            "vars_file": "config.json"
+        },
+        "vendor": {
+            "folder": "vendor"
+        },
+        "assets": {
+            "folder": "assets"
+        },
+        "html": {
+            "ext": ".html",
+            "vars_folder": "vars"
+        },
+        "javascript": {
+            "folder": "js",
+            "ext": ".js"
+        }
+    }
+}

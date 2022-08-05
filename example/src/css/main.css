@@ -1,0 +1,15 @@
+@import "local://includes/common/reset.css";
+@import "local://includes/common/fonts.css";
+@import "local://includes/header.css";
+@import "local://includes/footer.css";
+
+.disabled {
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.3;
+}
+
+::selection {
+    background-color: #0148FF;
+    color: #FFFFFF;
+}
