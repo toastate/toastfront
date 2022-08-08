@@ -2,7 +2,10 @@ module github.com/toastate/toastfront
 
 go 1.19
 
-require github.com/go-kit/log v0.2.1
+require (
+	github.com/davecgh/go-spew v1.1.1
+	github.com/go-kit/log v0.2.1
+)
 
 require (
 	github.com/tdewolff/parse/v2 v2.6.2 // indirect

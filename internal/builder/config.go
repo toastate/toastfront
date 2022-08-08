@@ -14,6 +14,7 @@ type MainConf struct {
 	VarsDir       string                       `json:"vars_directory,omitempty"`
 	RootLanguage  string                       `json:"root_language,omitempty"`
 	Languages     []string                     `json:"languages,omitempty"`
+	LanguageMode  string                       `json:"language_mode,omitempty"`
 	BuilderConfig map[string]map[string]string `json:"builder_config,omitempty"`
 }
 
@@ -24,8 +25,9 @@ var DefaultMainConf = &MainConf{
 	Languages: []string{
 		"en",
 	},
-	HTMLDir: "html",
-	VarsDir: "html/vars",
+	LanguageMode: "unique", // Any of unique, subfolder, folder
+	HTMLDir:      "html",
+	VarsDir:      "html/vars",
 	BuilderConfig: map[string]map[string]string{
 		"css": {
 			"ext":       ".css",
@@ -49,6 +51,10 @@ var DefaultMainConf = &MainConf{
 }
 
 func (b *Builder) ReadConfig() error {
+	if b.Config != nil {
+		return nil
+	}
+
 	_, err := os.Stat(b.ConfigFile)
 
 	{

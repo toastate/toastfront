@@ -21,7 +21,8 @@ type Builder struct {
 
 	FileDeps map[string]map[string]struct{}
 
-	SubBuilders map[string]*Builder // Used in multi lang scenarios
+	IsSubBuilder bool
+	SubBuilders  map[string]*Builder // Used in multi lang scenarios
 }
 
 type BuildEnv struct {

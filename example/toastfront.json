@@ -6,7 +6,7 @@
         "en",
         "fr"
     ],
-    "root_language": "fr",
+    "root_language": "",
     "builder_config": {
         "css": {
             "exe": ".css",

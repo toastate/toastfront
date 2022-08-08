@@ -90,6 +90,39 @@ func (b *Builder) Init() error {
 		}
 	}
 
+	if !b.IsSubBuilder && len(b.Config.Languages) > 1 {
+		buildDir := b.BuildDir
+		b.SubBuilders = map[string]*Builder{}
+		i := 0
+		if b.Config.RootLanguage == "" {
+			b.CurrentLanguage = b.Config.Languages[0]
+			b.BuildDir = filepath.Join(buildDir, b.CurrentLanguage)
+			i++
+		}
+		for ; i < len(b.Config.Languages); i++ {
+			lg := b.Config.Languages[i]
+			if lg == b.CurrentLanguage {
+				continue
+			}
+			subBuilder := &Builder{
+				RootFolder:      b.RootFolder,
+				ConfigFile:      b.ConfigFile,
+				HTMLDirectory:   b.HTMLDirectory,
+				VarsDirectory:   b.VarsDirectory,
+				Config:          b.Config,
+				CurrentLanguage: lg,
+				SrcDir:          b.SrcDir,
+				BuildDir:        filepath.Join(buildDir, lg),
+				IsSubBuilder:    true,
+			}
+			err := subBuilder.Init()
+			if err != nil {
+				return err
+			}
+			b.SubBuilders[lg] = subBuilder
+		}
+	}
+
 	return nil
 }
 
@@ -149,11 +182,11 @@ func (b *Builder) Build() error {
 		}
 
 		for _, subBuilder := range b.SubBuilders {
-			for k, v := range subBuilder.FileBuilders {
+			for _, v := range subBuilder.FileBuildersArray {
 				if v.CanHandle(path, info) {
 					err = v.Process(path, info)
 					if err != nil {
-						tlogger.Error("msg", "Error processing file", "builder", k, "path", path, "error", err)
+						tlogger.Error("msg", "Error processing file", "path", path, "error", err)
 						return err
 					}
 
