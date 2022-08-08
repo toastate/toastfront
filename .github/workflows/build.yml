@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  remove-old-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.19"
+
+      - name: Run build
+        run: |
+          go build -o build/bin/toastfront "./cmd/toastfront"
+          env GOOS=windows go build -o build/bin/toastfront.exe "./cmd/toastfront"
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: toastfront
+          path: |
+            build
