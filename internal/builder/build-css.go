@@ -3,13 +3,14 @@ package builder
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
+	htemplate "html/template"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	ttemplate "text/template"
 
 	"github.com/toastate/toastfront/internal/tlogger"
 )
@@ -90,16 +91,30 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 
 	// wr := filewriter.Writer("text/css", of)
 
-	t, err := template.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
-	if err != nil {
-		tlogger.Error("builder", "css", "msg", "temple", "file", path, "err", err)
-		return err
-	}
+	if cb.builder.Config.UnsafeVars {
+		t, err := ttemplate.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "temple", "file", path, "err", err)
+			return err
+		}
 
-	err = t.Execute(of, cb.data)
-	if err != nil {
-		tlogger.Error("builder", "css", "msg", "templater", "file", path, "err", err)
-		return err
+		err = t.Execute(of, cb.data)
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "templater", "file", path, "err", err)
+			return err
+		}
+	} else {
+		t, err := htemplate.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "temple", "file", path, "err", err)
+			return err
+		}
+
+		err = t.Execute(of, cb.data)
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "templater", "file", path, "err", err)
+			return err
+		}
 	}
 
 	return nil

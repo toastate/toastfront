@@ -41,20 +41,25 @@ func TriggerReload() {
 	reloadBroker.Publish(struct{}{})
 }
 
-func Start(buildDir string, port string) {
+func Start(buildDir string, port string, override404 string) {
 	r := mux.NewRouter()
-	r.PathPrefix("/").HandlerFunc(fileServer(buildDir))
+	r.PathPrefix("/").HandlerFunc(fileServer(buildDir, override404))
 	http.Handle("/", r)
 	tlogger.Warn("msg", "Listening", "port", port)
 	http.ListenAndServe(":"+port, nil)
 }
 
-func fileServer(dir string) func(http.ResponseWriter, *http.Request) {
+func fileServer(dir string, override404 string) func(http.ResponseWriter, *http.Request) {
+	if override404 != "" && !strings.HasPrefix(override404, "/") {
+		override404 = "/" + override404
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/__internal/livereload" {
 			livereloadHandler(w, r)
 			return
 		}
+	begin:
 		upath := r.URL.Path
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath
@@ -92,6 +97,10 @@ func fileServer(dir string) func(http.ResponseWriter, *http.Request) {
 		}
 
 		if !valid {
+			if override404 != "" && r.URL.Path != override404 {
+				r.URL.Path = override404
+				goto begin
+			}
 			w.WriteHeader(404)
 			w.Write([]byte("404 page not found"))
 			return

@@ -3,13 +3,14 @@ package builder
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
+	htemplate "html/template"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	ttemplate "text/template"
 
 	"github.com/toastate/toastfront/internal/tlogger"
 )
@@ -114,7 +115,7 @@ func (cb *HTMLBuilder) GetPathData(path string) map[string]interface{} {
 func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 	out := make(map[string]interface{})
 	{
-		bt, _ := json.Marshal(cb.baseData)
+		bt, _ := MarshalJson(cb.baseData)
 		json.Unmarshal(bt, &out)
 	}
 
@@ -176,20 +177,37 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 	defer of.Close()
 
 	// wr := filewriter.Writer("text/html", of)
+	pathData := cb.GetPathData(pathOut)
+
 	wr := of
 
-	t, err := template.New(path).Delims(`<!--#`, `-->`).Parse(string(f))
+	if cb.builder.Config.UnsafeVars {
+		t, err := ttemplate.New(path).Delims(`<!--#`, `-->`).Parse(string(f))
 
-	if err != nil {
-		tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
-		return err
-	}
+		if err != nil {
+			tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
+			return err
+		}
 
-	pathData := cb.GetPathData(pathOut)
-	err = t.Execute(wr, pathData)
-	if err != nil {
-		tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
-		return err
+		err = t.Execute(wr, pathData)
+		if err != nil {
+			tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
+			return err
+		}
+	} else {
+		t, err := htemplate.New(path).Delims(`<!--#`, `-->`).Parse(string(f))
+
+		if err != nil {
+			tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
+			return err
+		}
+
+		err = t.Execute(wr, pathData)
+		if err != nil {
+			tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
+			return err
+		}
+
 	}
 
 	return nil

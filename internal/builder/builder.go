@@ -83,13 +83,6 @@ func (b *Builder) Init() error {
 		b.FileBuilders["copy"],
 	}
 
-	for _, v := range b.FileBuildersArray {
-		err := v.Init()
-		if err != nil {
-			return err
-		}
-	}
-
 	if !b.IsSubBuilder && len(b.Config.Languages) > 1 {
 		buildDir := b.BuildDir
 		b.SubBuilders = map[string]*Builder{}
@@ -120,6 +113,13 @@ func (b *Builder) Init() error {
 				return err
 			}
 			b.SubBuilders[lg] = subBuilder
+		}
+	}
+
+	for _, v := range b.FileBuildersArray {
+		err := v.Init()
+		if err != nil {
+			return err
 		}
 	}
 

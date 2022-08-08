@@ -129,7 +129,7 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 	// Check dependancy tree on update & rebuild
 	// k: Start server
 
-	server.Start(r.BuildDir, "8100")
+	server.Start(buildtool.BuildDir, "8100", buildtool.Config.ServeConfig.Redirect404)
 
 	return nil
 }

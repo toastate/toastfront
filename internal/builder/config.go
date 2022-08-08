@@ -8,6 +8,7 @@ import (
 )
 
 type MainConf struct {
+	UnsafeVars    bool                         `json:"unsafe_vars,omitempty"`
 	BuildDir      string                       `json:"build_directory,omitempty"`
 	SrcDir        string                       `json:"source_directory,omitempty"`
 	HTMLDir       string                       `json:"html_directory,omitempty"`
@@ -16,9 +17,15 @@ type MainConf struct {
 	Languages     []string                     `json:"languages,omitempty"`
 	LanguageMode  string                       `json:"language_mode,omitempty"`
 	BuilderConfig map[string]map[string]string `json:"builder_config,omitempty"`
+	ServeConfig   ServeConfig                  `json:"serve_config,omitempty"`
+}
+
+type ServeConfig struct {
+	Redirect404 string `json:"redirect_404"`
 }
 
 var DefaultMainConf = &MainConf{
+	UnsafeVars:   false,
 	BuildDir:     "build",
 	SrcDir:       "src",
 	RootLanguage: "en",
@@ -48,6 +55,9 @@ var DefaultMainConf = &MainConf{
 			"ext":    ".js",
 		},
 	},
+	ServeConfig: ServeConfig{
+		Redirect404: "",
+	},
 }
 
 func (b *Builder) ReadConfig() error {
@@ -58,7 +68,7 @@ func (b *Builder) ReadConfig() error {
 	_, err := os.Stat(b.ConfigFile)
 
 	{
-		jsm, _ := json.Marshal(DefaultMainConf)
+		jsm, _ := MarshalJson(DefaultMainConf)
 		json.Unmarshal(jsm, &b.Config)
 	}
 

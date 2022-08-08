@@ -178,7 +178,7 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 
 		htmlBuilder := cb.builder.FileBuilders["html"].(*HTMLBuilder)
 		pathData := htmlBuilder.GetPathDataDir(p)
-		jsm, _ := json.Marshal(pathData)
+		jsm, _ := MarshalJson(pathData)
 		return jsm
 
 		// fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
