@@ -184,7 +184,8 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 		tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
 		return err
 	}
-	pathData := cb.GetPathData(path)
+
+	pathData := cb.GetPathData(pathOut)
 	err = t.Execute(wr, pathData)
 	if err != nil {
 		tlogger.Error("builder", "html", "msg", "templater", "file", path, "err", err)
@@ -195,6 +196,7 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 }
 
 func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error) {
+
 	if cb.depth > 5 {
 		tlogger.Debug("builder", "html", "msg", "file error", "file", path, "err", "reached max recursion depth of 5, import loop ?")
 		return nil, errors.New("Too deep")
