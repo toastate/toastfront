@@ -22,6 +22,7 @@ type MainConf struct {
 
 type ServeConfig struct {
 	Redirect404 string `json:"redirect_404"`
+	Port        int    `json:"port"`
 }
 
 var DefaultMainConf = &MainConf{
@@ -57,6 +58,7 @@ var DefaultMainConf = &MainConf{
 	},
 	ServeConfig: ServeConfig{
 		Redirect404: "",
+		Port:        8100,
 	},
 }
 

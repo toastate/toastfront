@@ -9,7 +9,8 @@
     ],
     "root_language": "",
     "serve_config":{
-        "redirect_404": ""
+        "redirect_404": "",
+        "port": 8100
     },
     "builder_config": {
         "css": {

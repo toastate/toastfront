@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -12,8 +13,8 @@ import (
 )
 
 var CLI struct {
-	Build CommandBuild `cmd:"" help:"Builds or rebuilds the project."`
-	Serve CommandServe `cmd:"" help:"Run a live dev server."`
+	Build CommandBuild `cmd:"" aliases:"b" help:"Builds or rebuilds the project."`
+	Serve CommandServe `cmd:"" aliases:"s" help:"Run a live dev server."`
 }
 
 type CommandBuild struct {
@@ -28,6 +29,8 @@ type CommandServe struct {
 	BuildDir   string `help:"Build output."`
 	Build      bool   `negatable:"" help:"Don't run build."`
 	LiveReload bool   `negatable:"" help:"Don't watch for changes."`
+
+	Port int `short:"p" help:"Listener port"`
 
 	Verbose int `short:"v" help:"Print verbose output." type:"counter"`
 }
@@ -94,42 +97,50 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 		RootFolder: ".",
 	}
 
-	buildStart := time.Now()
-	err := buildtool.Build()
-	estBuildTime := time.Now().Sub(buildStart)
-	estBuildTime *= 2
-	if estBuildTime > time.Millisecond*500 {
-		estBuildTime = time.Millisecond * 500
-	}
-
-	if err != nil {
-		os.Exit(1)
-	}
-
-	updates := watcher.StartWatcher(r.SrcDir)
-
-	go func() {
-		for {
-			_ = <-updates
-		rootFor:
-			for {
-				select {
-				case <-updates:
-					continue
-				case <-time.After(time.Millisecond * 500):
-					break rootFor
-				}
-			}
-			buildtool.Build()
-			server.TriggerReload()
+	if r.Build {
+		buildStart := time.Now()
+		err := buildtool.Build()
+		estBuildTime := time.Now().Sub(buildStart)
+		estBuildTime *= 2
+		if estBuildTime > time.Millisecond*500 {
+			estBuildTime = time.Millisecond * 500
 		}
-	}()
+		if err != nil {
+			os.Exit(1)
+		}
+
+		if r.LiveReload {
+			updates := watcher.StartWatcher(r.SrcDir)
+
+			go func() {
+				for {
+					_ = <-updates
+				rootFor:
+					for {
+						select {
+						case <-updates:
+							continue
+						case <-time.After(time.Millisecond * 500):
+							break rootFor
+						}
+					}
+					buildtool.Build()
+					server.TriggerReload()
+				}
+			}()
+		}
+	}
+
 	// Start file change listener
 	// Builder: add dep tree
 	// Check dependancy tree on update & rebuild
 	// k: Start server
 
-	server.Start(buildtool.BuildDir, "8100", buildtool.Config.ServeConfig.Redirect404)
+	if r.Port > 0 {
+		buildtool.Config.ServeConfig.Port = r.Port
+	}
+
+	server.Start(buildtool.BuildDir, strconv.Itoa(buildtool.Config.ServeConfig.Port), buildtool.Config.ServeConfig.Redirect404)
 
 	return nil
 }
