@@ -100,7 +100,7 @@ func (cb *HTMLBuilder) IsHtmlFile(path string, file fs.FileInfo) bool {
 
 func (cb *HTMLBuilder) RewritePath(path string) string {
 	if cb.builder.HTMLDirectory != nil {
-		if strings.HasPrefix(path, *cb.builder.HTMLDirectory+"/") {
+		if strings.HasPrefix(path, *cb.builder.HTMLDirectory+string(filepath.Separator)) {
 			path = path[len(*cb.builder.HTMLDirectory)+1:]
 		}
 	}

@@ -23,7 +23,7 @@ func (cp *CopyBuilder) CanHandle(path string, file fs.FileInfo) bool {
 	if path == *cp.builder.VarsDirectory {
 		return false
 	}
-	if strings.HasPrefix(path, *cp.builder.VarsDirectory+"/") {
+	if strings.HasPrefix(path, *cp.builder.VarsDirectory+string(os.PathSeparator)) {
 		return false
 	}
 
