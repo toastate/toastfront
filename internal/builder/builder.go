@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/toastate/toastfront/internal/tlogger"
 )
@@ -151,8 +152,13 @@ func (b *Builder) Build() error {
 
 	err = os.RemoveAll(b.BuildDir)
 	if err != nil {
-		tlogger.Error("msg", "Failed to remove build folder", "path", b.BuildDir, "err", err)
-		return err
+		time.After(time.Millisecond * 20)
+		err = os.RemoveAll(b.BuildDir)
+		if err != nil {
+			time.After(time.Millisecond * 20)
+			err = os.RemoveAll(b.BuildDir)
+			tlogger.Error("msg", "Failed to remove build folder", "path", b.BuildDir, "err", err)
+		}
 	}
 	err = os.MkdirAll(b.BuildDir, 0755)
 	if err != nil {
