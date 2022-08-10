@@ -20,17 +20,15 @@ Or clone it and build it from scratch using `go build cmd/toastfront/toastfront.
 
 Either start from scratch or by copying the `exemple` folder
 
-Create a `toastatfront.json` file at the root of your project
-[[Here link to toastfront json wiki page]]
+Create a `toastatfront.json` file at the root of your project [toastfront.json documentation](https://github.com/toastate/toastfront/wiki/toastfront.json-structure)
 
 #### Take advantage of toastfront features
 
-The complete list of features is avaliable on the wiki including:
-    - I18N setup
+The complete [list of features is avaliable on the wiki](https://github.com/toastate/toastfront/wiki/Toastfront-features) including:
+    - HTML Templating & Internationalisation (via vars)
     - HTML Imports
-    - HTML Templating & Internationalisation
     - JS Imports
-        - Importing vars in your file
+        - Importing HTML vars in your file
     - CSS Imports
 
 #### Run it
