@@ -2,6 +2,7 @@ package builder
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -38,6 +39,7 @@ func (cp *CopyBuilder) RewritePath(path string) string {
 }
 
 func (cp *CopyBuilder) Process(path string, file fs.FileInfo) error {
+	os.MkdirAll(filepath.Join(cp.builder.BuildDir, filepath.Dir(path)), 0755)
 	_, err := copyFile(filepath.Join(cp.builder.SrcDir, path), filepath.Join(cp.builder.BuildDir, path))
 	return err
 }

@@ -88,7 +88,7 @@ func (cb *JSBuilder) Process(path string, file fs.FileInfo) error {
 	}
 	defer of.Close()
 
-	wr := filewriter.Writer("application/javascript", of)
+	wr := of
 
 	wr.Write(f)
 	wr.Close()
