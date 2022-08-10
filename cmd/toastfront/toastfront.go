@@ -97,7 +97,7 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 		RootFolder: ".",
 	}
 
-	if r.Build {
+	if !r.Build {
 		buildStart := time.Now()
 		err := buildtool.Build()
 		estBuildTime := time.Now().Sub(buildStart)
@@ -109,7 +109,7 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 			os.Exit(1)
 		}
 
-		if r.LiveReload {
+		if !r.LiveReload {
 			updates := watcher.StartWatcher(r.SrcDir)
 
 			go func() {

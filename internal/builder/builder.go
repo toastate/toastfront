@@ -152,10 +152,10 @@ func (b *Builder) Build() error {
 
 	err = os.RemoveAll(b.BuildDir)
 	if err != nil {
-		time.After(time.Millisecond * 20)
+		<-time.After(time.Millisecond * 20)
 		err = os.RemoveAll(b.BuildDir)
 		if err != nil {
-			time.After(time.Millisecond * 20)
+			<-time.After(time.Millisecond * 20)
 			err = os.RemoveAll(b.BuildDir)
 			tlogger.Error("msg", "Failed to remove build folder", "path", b.BuildDir, "err", err)
 		}
