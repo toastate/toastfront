@@ -26,3 +26,4 @@ jobs:
         goversion: "1.19"
         project_path: "./cmd/toastfront"
         binary_name: "toastfront"
+        compress_assets: false
