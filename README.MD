@@ -4,9 +4,11 @@ The simple front-end build used by the [Toastate.com](https://www.toastate.com) 
 
 ## Description
 
-Toastfront was designed to be a simple front-end build system relying on file imports and with internationalisation out of the box
+Toastfront is a simple front-end build system relying on file imports and with internationalisation out of the box.
 
-Toastfront is made to be used mostly with vanilla javascript in mind but should work with every project that doesn't need transpiling
+Toastfront is made to be used mostly with vanilla javascript in mind but should work with every project that doesn't need transpiling.
+
+It is transparent because it has no dependencies and outputs vanilla HTML/css/js. It provides code with full native performance in the browser.
 
 ## Getting started
 
