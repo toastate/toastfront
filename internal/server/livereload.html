@@ -2,7 +2,15 @@
 <!-- Appended by toastfront -->
 <script>
 	var host = window.location.host;
-	var sock = new WebSocket("ws://" + host + "/__internal/livereload");
+	var wsuri = "";
+	
+	if (window.location.protocol != "https:") {
+		wsuri = "ws://" + host + "/__internal/livereload"
+	}else{
+		wsuri = "wss://" + host + "/__internal/livereload"
+	}
+
+	var sock = new WebSocket(wsuri);
 
 	sock.onmessage = function (event) {
 		console.log(event.data);
