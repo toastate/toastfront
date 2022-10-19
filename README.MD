@@ -1,6 +1,6 @@
 # Toastfront
 
-The simple front-end build used by the [Toastate.com](https://www.toastate.com) team 
+The simple front-end build tool used by the [Toastate.com](https://www.toastate.com) team 
 
 ## Description
 
