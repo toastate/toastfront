@@ -1,3 +1,2 @@
 build/
-tests/build/
-tests/src/js/__internal
+cmd/toastfront/toastfront

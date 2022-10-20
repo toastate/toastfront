@@ -2,15 +2,15 @@ package builder
 
 import (
 	"encoding/json"
-	"errors"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/toastate/toastfront/internal/helpers"
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
 var JSBuilderImportRegexp = regexp.MustCompile(`(?m)^import "local:\/\/(.*)";$`)
@@ -33,7 +33,7 @@ func (cb *JSBuilder) Init() error {
 	cb.folder = "js"
 	cb.extension = ".js"
 
-	if jsData, ok := cb.builder.Config.BuilderConfig["js"]; ok {
+	if jsData, ok := config.Config.BuilderConfig["js"]; ok {
 		if data, ok := jsData["vars_file"]; ok {
 			cb.VarsFile = data
 		}
@@ -45,7 +45,7 @@ func (cb *JSBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.SrcDir, cb.folder, cb.VarsFile)
+	varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.VarsFile)
 	f, err := os.Open(varsPath)
 	if err != nil {
 		tlogger.Warn("builder", "js", "msg", "Can't open js vars file", "file", varsPath, "err", err)
@@ -81,7 +81,7 @@ func (cb *JSBuilder) Process(path string, file fs.FileInfo) error {
 		return err
 	}
 
-	of, err := os.OpenFile(filepath.Join(cb.builder.BuildDir, path), os.O_CREATE|os.O_RDWR, 0644)
+	of, err := os.OpenFile(filepath.Join(cb.builder.buildDir, path), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		tlogger.Error("builder", "js", "msg", "output file creation", "file", path, "err", err)
 		return err
@@ -103,9 +103,9 @@ func (cb *JSBuilder) GetInternal(path string) []byte {
 func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error) {
 	if cb.depth > 5 {
 		tlogger.Debug("builder", "js", "msg", "file error", "file", path, "err", "reached max recursion depth of 5, import loop ?")
-		return nil, errors.New("Too deep")
+		return nil, ErrTooDeep
 	}
-	f, err := ioutil.ReadFile(filepath.Join(cb.builder.SrcDir, path))
+	f, err := os.ReadFile(filepath.Join(cb.builder.srcDir, path))
 	if err != nil {
 		tlogger.Error("builder", "js", "msg", "file error", "file", path, "err", err)
 		return nil, err
@@ -126,7 +126,7 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 
 		p = filepath.Join(cb.folder, p)
 
-		fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
+		fileData, err := os.Stat(filepath.Join(cb.builder.srcDir, p))
 		if err != nil {
 			tlogger.Error("builder", "js", "msg", "file error import", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
@@ -146,10 +146,10 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 			data:      cb.data,
 		}
 
-		if _, ok := cb.builder.FileDeps[p]; ok {
-			cb.builder.FileDeps[p][path] = struct{}{}
+		if _, ok := cb.builder.fileDeps[p]; ok {
+			cb.builder.fileDeps[p][path] = struct{}{}
 		} else {
-			cb.builder.FileDeps[p] = map[string]struct{}{path: {}}
+			cb.builder.fileDeps[p] = map[string]struct{}{path: {}}
 		}
 
 		c, err := nestedCB.ProcessAsByte(p, fileData)
@@ -176,9 +176,9 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 			p = p[1:]
 		}
 
-		htmlBuilder := cb.builder.FileBuilders["html"].(*HTMLBuilder)
+		htmlBuilder := cb.builder.fileBuilders["html"].(*HTMLBuilder)
 		pathData := htmlBuilder.GetPathDataDir(p)
-		jsm, _ := MarshalJson(pathData)
+		jsm, _ := helpers.MarshalJson(pathData)
 		return jsm
 
 		// fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))

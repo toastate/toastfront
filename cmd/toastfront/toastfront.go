@@ -1,20 +1,22 @@
 package main
 
 import (
+	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/toastate/toastfront/internal/builder"
 	"github.com/toastate/toastfront/internal/server"
 	"github.com/toastate/toastfront/internal/tlogger"
-	"github.com/toastate/toastfront/internal/watcher"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
 var CLI struct {
 	Build CommandBuild `cmd:"" aliases:"b" help:"Builds or rebuilds the project."`
 	Serve CommandServe `cmd:"" aliases:"s" help:"Run a live dev server."`
+
+	ConfigFile string `short:"c" help:"configuration file path (optional)"`
 }
 
 type CommandBuild struct {
@@ -25,10 +27,9 @@ type CommandBuild struct {
 }
 
 type CommandServe struct {
-	SrcDir     string `help:"Source directory." type:"existingdir"`
-	BuildDir   string `help:"Build output."`
-	Build      bool   `negatable:"" help:"Don't run build."`
-	LiveReload bool   `negatable:"" help:"Don't watch for changes."`
+	SrcDir   string `help:"Source directory." type:"existingdir"`
+	BuildDir string `help:"Build output."`
+	Build    bool   `negatable:"" help:"Don't run build."`
 
 	Port int `short:"p" help:"Listener port"`
 
@@ -38,8 +39,12 @@ type CommandServe struct {
 func main() {
 	ctx := kong.Parse(&CLI, kong.UsageOnError())
 
-	err := ctx.Run(ctx)
+	err := config.Init(CLI.ConfigFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	err = ctx.Run(ctx)
 	if err != nil {
 		ctx.PrintUsage(false)
 	}
@@ -66,14 +71,14 @@ func (r *CommandBuild) Run(ctx *kong.Context) error {
 		r.BuildDir = "build"
 	}
 
-	buildtool := builder.Builder{
-		SrcDir:     r.SrcDir,
-		BuildDir:   r.BuildDir,
-		RootFolder: ".",
+	buildtool := builder.NewBuilder(r.SrcDir, r.BuildDir, ".")
+
+	err := buildtool.Init()
+	if err != nil {
+		return err
 	}
 
-	err := buildtool.Build()
-
+	err = buildtool.Build()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -90,57 +95,11 @@ func (r *CommandServe) Run(ctx *kong.Context) error {
 	if r.BuildDir == "" {
 		r.BuildDir = "build"
 	}
-
-	buildtool := builder.Builder{
-		SrcDir:     r.SrcDir,
-		BuildDir:   r.BuildDir,
-		RootFolder: ".",
+	if r.Port <= 0 {
+		r.Port = config.Config.ServeConfig.Port
 	}
 
-	if !r.Build {
-		buildStart := time.Now()
-		err := buildtool.Build()
-		estBuildTime := time.Now().Sub(buildStart)
-		estBuildTime *= 2
-		if estBuildTime > time.Millisecond*500 {
-			estBuildTime = time.Millisecond * 500
-		}
-		if err != nil {
-			os.Exit(1)
-		}
+	serv := server.NewServer(r.SrcDir, r.BuildDir, ".", strconv.Itoa(r.Port), config.Config.ServeConfig.Redirect404)
 
-		if !r.LiveReload {
-			updates := watcher.StartWatcher(r.SrcDir)
-
-			go func() {
-				for {
-					_ = <-updates
-				rootFor:
-					for {
-						select {
-						case <-updates:
-							continue
-						case <-time.After(time.Millisecond * 500):
-							break rootFor
-						}
-					}
-					buildtool.Build()
-					server.TriggerReload()
-				}
-			}()
-		}
-	}
-
-	// Start file change listener
-	// Builder: add dep tree
-	// Check dependancy tree on update & rebuild
-	// k: Start server
-
-	if r.Port > 0 {
-		buildtool.Config.ServeConfig.Port = r.Port
-	}
-
-	server.Start(buildtool.BuildDir, strconv.Itoa(buildtool.Config.ServeConfig.Port), buildtool.Config.ServeConfig.Redirect404)
-
-	return nil
+	return serv.Start(!r.Build)
 }

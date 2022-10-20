@@ -5,24 +5,36 @@ import (
 )
 
 type Builder struct {
-	RootFolder string
-	ConfigFile string
-	BuildDir   string
-	SrcDir     string
+	initialized bool
 
-	CurrentLanguage string
+	rootFolder string
+	buildDir   string
+	srcDir     string
 
-	HTMLDirectory *string
-	VarsDirectory *string
+	currentLanguage string
 
-	Config            *MainConf
-	FileBuilders      map[string]FileBuilder
-	FileBuildersArray []FileBuilder
+	htmlDirectory *string
+	varsDirectory *string
 
-	FileDeps map[string]map[string]struct{}
+	fileBuilders      map[string]FileBuilder
+	fileBuildersArray []FileBuilder
 
-	IsSubBuilder bool
-	SubBuilders  map[string]*Builder // Used in multi lang scenarios
+	fileDeps map[string]map[string]struct{}
+
+	isSubBuilder bool
+	subBuilders  map[string]*Builder // Used in multi lang scenarios
+}
+
+func NewBuilder(srcDir, buildDir, rootFolder string) *Builder {
+	return &Builder{
+		srcDir:     srcDir,
+		buildDir:   buildDir,
+		rootFolder: rootFolder,
+	}
+}
+
+func (b *Builder) BuildDir() string {
+	return b.buildDir
 }
 
 type BuildEnv struct {

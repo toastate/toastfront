@@ -2,10 +2,8 @@ package builder
 
 import (
 	"encoding/json"
-	"errors"
 	htemplate "html/template"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,6 +11,7 @@ import (
 	ttemplate "text/template"
 
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
 var CSSBuilderImportRegexp = regexp.MustCompile(`(?m)^\s*@import "local:\/\/(.*)";\s*$`)
@@ -34,7 +33,7 @@ func (cb *CSSBuilder) Init() error {
 	cb.folder = "css"
 	cb.extension = ".css"
 
-	if cssData, ok := cb.builder.Config.BuilderConfig["css"]; ok {
+	if cssData, ok := config.Config.BuilderConfig["css"]; ok {
 		if data, ok := cssData["vars_file"]; ok {
 			cb.varsFile = data
 		}
@@ -46,7 +45,7 @@ func (cb *CSSBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.SrcDir, cb.folder, cb.varsFile)
+	varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.varsFile)
 	f, err := os.Open(varsPath)
 	if err != nil {
 		tlogger.Warn("builder", "css", "msg", "Can't open css vars file", "file", varsPath, "err", err)
@@ -82,7 +81,7 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 		return err
 	}
 
-	of, err := os.OpenFile(filepath.Join(cb.builder.BuildDir, path), os.O_CREATE|os.O_RDWR, 0644)
+	of, err := os.OpenFile(filepath.Join(cb.builder.buildDir, path), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "output file creation", "file", path, "err", err)
 		return err
@@ -91,7 +90,7 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 
 	// wr := filewriter.Writer("text/css", of)
 
-	if cb.builder.Config.UnsafeVars {
+	if config.Config.UnsafeVars {
 		t, err := ttemplate.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
 		if err != nil {
 			tlogger.Error("builder", "css", "msg", "temple", "file", path, "err", err)
@@ -123,9 +122,9 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error) {
 	if cb.depth > 5 {
 		tlogger.Debug("builder", "css", "msg", "file error", "file", path, "err", "reached max recursion depth of 5, import loop ?")
-		return nil, errors.New("Too deep")
+		return nil, ErrTooDeep
 	}
-	f, err := ioutil.ReadFile(filepath.Join(cb.builder.SrcDir, path))
+	f, err := os.ReadFile(filepath.Join(cb.builder.srcDir, path))
 	if err != nil {
 		tlogger.Error("builder", "css", "msg", "file error", "file", path, "err", err)
 		return nil, err
@@ -144,7 +143,7 @@ func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 
 		p = filepath.Join(cb.folder, p)
 
-		fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
+		fileData, err := os.Stat(filepath.Join(cb.builder.srcDir, p))
 		if err != nil {
 			tlogger.Error("builder", "css", "msg", "file error import", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
@@ -164,10 +163,10 @@ func (cb *CSSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, erro
 			data:      cb.data,
 		}
 
-		if _, ok := cb.builder.FileDeps[p]; ok {
-			cb.builder.FileDeps[p][path] = struct{}{}
+		if _, ok := cb.builder.fileDeps[p]; ok {
+			cb.builder.fileDeps[p][path] = struct{}{}
 		} else {
-			cb.builder.FileDeps[p] = map[string]struct{}{path: {}}
+			cb.builder.fileDeps[p] = map[string]struct{}{path: {}}
 		}
 
 		c, err := nestedCB.ProcessAsByte(p, fileData)

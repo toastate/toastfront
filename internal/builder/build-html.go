@@ -2,17 +2,17 @@ package builder
 
 import (
 	"encoding/json"
-	"errors"
 	htemplate "html/template"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	ttemplate "text/template"
 
+	"github.com/toastate/toastfront/internal/helpers"
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
 var HTMLBuilderImportRegexp = regexp.MustCompile(`(?m)<!--\s*#import\s+(.*)\s*-->`)
@@ -30,27 +30,27 @@ type HTMLBuilder struct {
 func (cb *HTMLBuilder) Init() error {
 	tlogger.Debug("builder", "html", "msg", "init")
 
-	cb.varsFolder = DefaultMainConf.VarsDir
-	cb.folder = DefaultMainConf.HTMLDir
-	cb.extension = DefaultMainConf.BuilderConfig["html"]["ext"]
+	cb.varsFolder = config.DefaultConfiguration.VarsDir
+	cb.folder = config.DefaultConfiguration.HTMLDir
+	cb.extension = config.DefaultConfiguration.BuilderConfig["html"]["ext"]
 
-	cb.folder = *cb.builder.HTMLDirectory
+	cb.folder = *cb.builder.htmlDirectory
 
-	if cb.builder.VarsDirectory != nil {
-		cb.varsFolder = *cb.builder.VarsDirectory
+	if cb.builder.varsDirectory != nil {
+		cb.varsFolder = *cb.builder.varsDirectory
 		if cb.varsFolder == "." {
 			cb.varsFolder = ""
 		}
 	}
 
-	if htmlData, ok := cb.builder.Config.BuilderConfig["html"]; ok {
+	if htmlData, ok := config.Config.BuilderConfig["html"]; ok {
 
 		if data, ok := htmlData["ext"]; ok {
 			cb.extension = data
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.SrcDir, cb.varsFolder)
+	varsPath := filepath.Join(cb.builder.srcDir, cb.varsFolder)
 
 	{
 		varsFile := filepath.Join(varsPath, "common.json")
@@ -65,7 +65,7 @@ func (cb *HTMLBuilder) Init() error {
 		}
 	}
 	{
-		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.CurrentLanguage+".json")
+		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.currentLanguage+".json")
 		f, err := os.Open(varsFile)
 		if err == nil {
 			tmp := make(map[string]interface{})
@@ -99,9 +99,9 @@ func (cb *HTMLBuilder) IsHtmlFile(path string, file fs.FileInfo) bool {
 }
 
 func (cb *HTMLBuilder) RewritePath(path string) string {
-	if cb.builder.HTMLDirectory != nil {
-		if strings.HasPrefix(path, *cb.builder.HTMLDirectory+string(filepath.Separator)) {
-			path = path[len(*cb.builder.HTMLDirectory)+1:]
+	if cb.builder.htmlDirectory != nil {
+		if strings.HasPrefix(path, *cb.builder.htmlDirectory+string(filepath.Separator)) {
+			path = path[len(*cb.builder.htmlDirectory)+1:]
 		}
 	}
 	return path
@@ -115,12 +115,12 @@ func (cb *HTMLBuilder) GetPathData(path string) map[string]interface{} {
 func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 	out := make(map[string]interface{})
 	{
-		bt, _ := MarshalJson(cb.baseData)
+		bt, _ := helpers.MarshalJson(cb.baseData)
 		json.Unmarshal(bt, &out)
 	}
 
 	varsPath := ""
-	varsPath = filepath.Join(cb.builder.SrcDir, cb.varsFolder, varsDir)
+	varsPath = filepath.Join(cb.builder.srcDir, cb.varsFolder, varsDir)
 
 	{
 		varsFile := filepath.Join(varsPath, "common.json")
@@ -141,7 +141,7 @@ func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 
 	{
 
-		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.CurrentLanguage+".json")
+		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.currentLanguage+".json")
 		f, err := os.Open(varsFile)
 		if err == nil {
 			secondaryOut := make(map[string]interface{})
@@ -169,7 +169,7 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 
 	pathOut := cb.RewritePath(path)
 
-	of, err := os.OpenFile(filepath.Join(cb.builder.BuildDir, pathOut), os.O_CREATE|os.O_RDWR, 0644)
+	of, err := os.OpenFile(filepath.Join(cb.builder.buildDir, pathOut), os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		tlogger.Error("builder", "html", "msg", "output file creation", "file", pathOut, "err", err)
 		return err
@@ -181,7 +181,7 @@ func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 
 	wr := of
 
-	if cb.builder.Config.UnsafeVars {
+	if config.Config.UnsafeVars {
 		t, err := ttemplate.New(path).Delims(`<!--#`, `-->`).Parse(string(f))
 
 		if err != nil {
@@ -217,9 +217,9 @@ func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, err
 
 	if cb.depth > 5 {
 		tlogger.Debug("builder", "html", "msg", "file error", "file", path, "err", "reached max recursion depth of 5, import loop ?")
-		return nil, errors.New("Too deep")
+		return nil, ErrTooDeep
 	}
-	f, err := ioutil.ReadFile(filepath.Join(cb.builder.SrcDir, path))
+	f, err := os.ReadFile(filepath.Join(cb.builder.srcDir, path))
 	if err != nil {
 		tlogger.Error("builder", "html", "msg", "file error", "file", path, "err", err)
 		return nil, err
@@ -240,7 +240,7 @@ func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, err
 			p = filepath.Join(cb.folder, p)
 		}
 
-		fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
+		fileData, err := os.Stat(filepath.Join(cb.builder.srcDir, p))
 		if err != nil {
 			tlogger.Error("builder", "html", "msg", "file error import", "sourcefile", path, "expectedfile", p, "err", err)
 			return []byte{'\n'}
@@ -260,10 +260,10 @@ func (cb *HTMLBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, err
 			baseData:   cb.baseData,
 		}
 
-		if _, ok := cb.builder.FileDeps[p]; ok {
-			cb.builder.FileDeps[p][path] = struct{}{}
+		if _, ok := cb.builder.fileDeps[p]; ok {
+			cb.builder.fileDeps[p][path] = struct{}{}
 		} else {
-			cb.builder.FileDeps[p] = map[string]struct{}{path: {}}
+			cb.builder.fileDeps[p] = map[string]struct{}{path: {}}
 		}
 
 		c, err := nestedCB.ProcessAsByte(p, fileData)

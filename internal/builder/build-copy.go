@@ -20,10 +20,10 @@ func (cp *CopyBuilder) Init() error {
 }
 
 func (cp *CopyBuilder) CanHandle(path string, file fs.FileInfo) bool {
-	if path == *cp.builder.VarsDirectory {
+	if path == *cp.builder.varsDirectory {
 		return false
 	}
-	if strings.HasPrefix(path, *cp.builder.VarsDirectory+string(os.PathSeparator)) {
+	if strings.HasPrefix(path, *cp.builder.varsDirectory+string(os.PathSeparator)) {
 		return false
 	}
 
@@ -39,7 +39,7 @@ func (cp *CopyBuilder) RewritePath(path string) string {
 }
 
 func (cp *CopyBuilder) Process(path string, file fs.FileInfo) error {
-	os.MkdirAll(filepath.Join(cp.builder.BuildDir, filepath.Dir(path)), 0755)
-	_, err := copyFile(filepath.Join(cp.builder.SrcDir, path), filepath.Join(cp.builder.BuildDir, path))
+	os.MkdirAll(filepath.Join(cp.builder.buildDir, filepath.Dir(path)), 0755)
+	_, err := copyFile(filepath.Join(cp.builder.srcDir, path), filepath.Join(cp.builder.buildDir, path))
 	return err
 }

@@ -1,21 +1,11 @@
 package builder
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
 )
-
-func MarshalJson(v any) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(v)
-	return buf.Bytes(), err
-}
 
 var windowCRregexp = regexp.MustCompile(`\r?\n`)
 

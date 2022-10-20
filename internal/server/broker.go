@@ -7,7 +7,7 @@ type Broker struct {
 	unsubCh   chan chan interface{}
 }
 
-func NewBroker() *Broker {
+func newBroker() *Broker {
 	return &Broker{
 		stopCh:    make(chan struct{}),
 		publishCh: make(chan interface{}, 1),

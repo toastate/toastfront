@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
 type FolderBuilder struct {
@@ -20,7 +21,7 @@ func (fb *FolderBuilder) Init() error {
 
 	fb.htmlVarsFolder = "vars"
 
-	if htmlData, ok := fb.builder.Config.BuilderConfig["html"]; ok {
+	if htmlData, ok := config.Config.BuilderConfig["html"]; ok {
 		if data, ok := htmlData["vars_folder"]; ok {
 			fb.htmlVarsFolder = data
 		}
@@ -33,18 +34,18 @@ func (fb *FolderBuilder) CanHandle(path string, file fs.FileInfo) bool {
 }
 
 func (fb *FolderBuilder) RewritePath(path string) string {
-	if fb.builder.HTMLDirectory != nil {
-		if path == *fb.builder.HTMLDirectory {
+	if fb.builder.htmlDirectory != nil {
+		if path == *fb.builder.htmlDirectory {
 			return ""
 		}
-		if path == *fb.builder.VarsDirectory {
+		if path == *fb.builder.varsDirectory {
 			return ""
 		}
-		if strings.HasPrefix(path, *fb.builder.VarsDirectory+string(os.PathSeparator)) {
+		if strings.HasPrefix(path, *fb.builder.varsDirectory+string(os.PathSeparator)) {
 			return ""
 		}
-		if strings.HasPrefix(path, *fb.builder.HTMLDirectory+string(os.PathSeparator)) {
-			path = path[len(*fb.builder.HTMLDirectory)+1:]
+		if strings.HasPrefix(path, *fb.builder.htmlDirectory+string(os.PathSeparator)) {
+			path = path[len(*fb.builder.htmlDirectory)+1:]
 		}
 	}
 
@@ -61,7 +62,7 @@ func (fb *FolderBuilder) Process(path string, file fs.FileInfo) error {
 		return nil
 	}
 
-	newFolder := filepath.Join(fb.builder.BuildDir, path)
+	newFolder := filepath.Join(fb.builder.buildDir, path)
 
 	err := os.MkdirAll(newFolder, 0755)
 	if err != nil {

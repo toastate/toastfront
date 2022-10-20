@@ -7,7 +7,7 @@
         "en",
         "fr"
     ],
-    "root_language": "",
+    "root_language": "fr",
     "serve_config":{
         "redirect_404": "",
         "port": 8100

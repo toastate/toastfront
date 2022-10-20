@@ -9,66 +9,65 @@ import (
 	"time"
 
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/config"
 )
 
+// Init is idempotent, multiple calls will only initialize the builder once
 func (b *Builder) Init() error {
-	if b.RootFolder == "" {
-		b.RootFolder = "."
-	}
-	if b.ConfigFile == "" {
-		b.ConfigFile = "toastfront.json"
-	}
-	err := b.ReadConfig()
-	if err != nil {
-		return err
+	if b.initialized {
+		return nil
 	}
 
-	if b.CurrentLanguage == "" {
-		b.CurrentLanguage = b.Config.RootLanguage
+	if b.rootFolder == "" {
+		b.rootFolder = "."
 	}
 
-	if b.BuildDir == "" {
-		b.BuildDir = filepath.Join(b.RootFolder, b.Config.BuildDir)
-	}
-	if b.SrcDir == "" {
-		b.SrcDir = filepath.Join(b.RootFolder, b.Config.SrcDir)
+	if b.currentLanguage == "" {
+		b.currentLanguage = config.Config.RootLanguage
 	}
 
-	if b.FileDeps == nil {
-		b.FileDeps = make(map[string]map[string]struct{})
+	if b.buildDir == "" {
+		b.buildDir = filepath.Join(b.rootFolder, config.Config.BuildDir)
+	}
+	if b.srcDir == "" {
+		b.srcDir = filepath.Join(b.rootFolder, config.Config.SrcDir)
 	}
 
-	if _, err := os.Stat(b.SrcDir); os.IsNotExist(err) {
-		tlogger.Error("msg", "Src folder not found", "path", b.SrcDir, "err", err)
-		return errors.New("Src folder not found")
+	if b.fileDeps == nil {
+		b.fileDeps = make(map[string]map[string]struct{})
 	}
 
-	if b.HTMLDirectory == nil {
-		if b.Config.HTMLDir != "." {
-			if b.Config.HTMLDir == "" { // Auto detect
-				if f, _ := os.Stat(filepath.Join(b.SrcDir, "html")); f != nil && f.IsDir() {
+	if _, err := os.Stat(b.srcDir); os.IsNotExist(err) {
+		tlogger.Error("msg", "Src folder not found", "path", b.srcDir, "err", err)
+		return errors.New("src folder not found")
+	}
+
+	if b.htmlDirectory == nil {
+		if config.Config.HTMLDir != "." {
+			if config.Config.HTMLDir == "" { // Auto detect
+				if f, _ := os.Stat(filepath.Join(b.srcDir, "html")); f != nil && f.IsDir() {
 					a := "html"
-					b.HTMLDirectory = &a
+					b.htmlDirectory = &a
 				}
 			} else { // Use config value
-				b.HTMLDirectory = &b.Config.HTMLDir
+				b.htmlDirectory = &config.Config.HTMLDir
 			}
 		} else {
 			a := ""
-			b.HTMLDirectory = &a
+			b.htmlDirectory = &a
 		}
 	}
 
-	if b.VarsDirectory == nil {
-		if b.Config.VarsDir == "" {
+	if b.varsDirectory == nil {
+		if config.Config.VarsDir == "" {
 			a := "html/vars"
-			b.VarsDirectory = &a
+			b.varsDirectory = &a
 		} else { // Use config value
-			b.VarsDirectory = &b.Config.VarsDir
+			b.varsDirectory = &config.Config.VarsDir
 		}
 	}
 
-	b.FileBuilders = map[string]FileBuilder{
+	b.fileBuilders = map[string]FileBuilder{
 		"folder": &FolderBuilder{builder: b},
 		"css":    &CSSBuilder{builder: b},
 		"html":   &HTMLBuilder{builder: b},
@@ -76,58 +75,57 @@ func (b *Builder) Init() error {
 		// "vendor": &VendorBuilder{builder: b},
 		"copy": &CopyBuilder{builder: b},
 	}
-	b.FileBuildersArray = []FileBuilder{
-		b.FileBuilders["folder"],
-		b.FileBuilders["css"],
-		b.FileBuilders["html"],
-		b.FileBuilders["js"],
-		b.FileBuilders["copy"],
+	b.fileBuildersArray = []FileBuilder{
+		b.fileBuilders["folder"],
+		b.fileBuilders["css"],
+		b.fileBuilders["html"],
+		b.fileBuilders["js"],
+		b.fileBuilders["copy"],
 	}
 
-	if len(b.SubBuilders) > 0 {
-		for _, v := range b.SubBuilders {
+	if len(b.subBuilders) > 0 {
+		for _, v := range b.subBuilders {
 			v.Init()
 		}
-	} else if !b.IsSubBuilder && len(b.Config.Languages) > 1 {
-		buildDir := b.BuildDir
-		b.SubBuilders = map[string]*Builder{}
+	} else if !b.isSubBuilder && len(config.Config.Languages) > 1 {
+		buildDir := b.buildDir
+		b.subBuilders = map[string]*Builder{}
 		i := 0
-		if b.Config.RootLanguage == "" {
-			b.CurrentLanguage = b.Config.Languages[0]
-			b.BuildDir = filepath.Join(buildDir, b.CurrentLanguage)
+		if config.Config.RootLanguage == "" {
+			b.currentLanguage = config.Config.Languages[0]
+			b.buildDir = filepath.Join(buildDir, b.currentLanguage)
 			i++
 		}
-		for ; i < len(b.Config.Languages); i++ {
-			lg := b.Config.Languages[i]
-			if lg == b.CurrentLanguage {
+		for ; i < len(config.Config.Languages); i++ {
+			lg := config.Config.Languages[i]
+			if lg == b.currentLanguage {
 				continue
 			}
 			subBuilder := &Builder{
-				RootFolder:      b.RootFolder,
-				ConfigFile:      b.ConfigFile,
-				HTMLDirectory:   b.HTMLDirectory,
-				VarsDirectory:   b.VarsDirectory,
-				Config:          b.Config,
-				CurrentLanguage: lg,
-				SrcDir:          b.SrcDir,
-				BuildDir:        filepath.Join(buildDir, lg),
-				IsSubBuilder:    true,
+				rootFolder:      b.rootFolder,
+				htmlDirectory:   b.htmlDirectory,
+				varsDirectory:   b.varsDirectory,
+				currentLanguage: lg,
+				srcDir:          b.srcDir,
+				buildDir:        filepath.Join(buildDir, lg),
+				isSubBuilder:    true,
 			}
 			err := subBuilder.Init()
 			if err != nil {
 				return err
 			}
-			b.SubBuilders[lg] = subBuilder
+			b.subBuilders[lg] = subBuilder
 		}
 	}
 
-	for _, v := range b.FileBuildersArray {
+	for _, v := range b.fileBuildersArray {
 		err := v.Init()
 		if err != nil {
 			return err
 		}
 	}
 
+	b.initialized = true
 	return nil
 }
 
@@ -145,40 +143,38 @@ func (b *Builder) ShouldHandle(name string) bool {
 }
 
 func (b *Builder) Build() error {
-	err := b.Init()
-	if err != nil {
-		return err
-	}
-
-	err = os.RemoveAll(b.BuildDir)
+	err := os.RemoveAll(b.buildDir)
 	if err != nil {
 		<-time.After(time.Millisecond * 20)
-		err = os.RemoveAll(b.BuildDir)
+		err = os.RemoveAll(b.buildDir)
 		if err != nil {
 			<-time.After(time.Millisecond * 20)
-			err = os.RemoveAll(b.BuildDir)
-			tlogger.Error("msg", "Failed to remove build folder", "path", b.BuildDir, "err", err)
+			err = os.RemoveAll(b.buildDir)
+			tlogger.Error("msg", "Failed to remove build folder", "path", b.buildDir, "err", err)
 		}
 	}
-	err = os.MkdirAll(b.BuildDir, 0755)
+	err = os.MkdirAll(b.buildDir, 0755)
 	if err != nil {
-		tlogger.Error("msg", "Failed to create build folder", "path", b.BuildDir, "err", err)
+		tlogger.Error("msg", "Failed to create build folder", "path", b.buildDir, "err", err)
 		return err
 	}
 
-	tlogger.Info("msg", "Building started", "path", b.SrcDir)
-	defer tlogger.Info("msg", "Building finished", "path", b.SrcDir)
+	tlogger.Info("msg", "Building started", "path", b.srcDir)
+	defer tlogger.Info("msg", "Building finished", "path", b.srcDir)
 
-	err = filepath.Walk(b.SrcDir, func(absolutepath string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(b.srcDir, func(absolutepath string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 
-		path, err := filepath.Rel(b.SrcDir, absolutepath)
+		path, err := filepath.Rel(b.srcDir, absolutepath)
 		if err != nil {
 			tlogger.Error("msg", "Failed to get relative path", "path", path, "err", err)
 			return err
 		}
 
 		if b.ShouldHandle(path) {
-			for _, v := range b.FileBuildersArray {
+			for _, v := range b.fileBuildersArray {
 				if v.CanHandle(path, info) {
 					err = v.Process(path, info)
 					if err != nil {
@@ -191,8 +187,8 @@ func (b *Builder) Build() error {
 			}
 		}
 
-		for _, subBuilder := range b.SubBuilders {
-			for _, v := range subBuilder.FileBuildersArray {
+		for _, subBuilder := range b.subBuilders {
+			for _, v := range subBuilder.fileBuildersArray {
 				if v.CanHandle(path, info) {
 					err = v.Process(path, info)
 					if err != nil {
@@ -212,7 +208,7 @@ func (b *Builder) Build() error {
 
 func (b *Builder) BuildSingle(path string, info fs.FileInfo) error {
 	if b.ShouldHandle(path) {
-		for k, v := range b.FileBuilders {
+		for k, v := range b.fileBuilders {
 			if v.CanHandle(path, info) {
 				err := v.Process(path, info)
 				if err != nil {
