@@ -130,7 +130,7 @@ func (s *Server) fileServer(dir string, override404 string) func(http.ResponseWr
 
 		const indexPage = "index.html"
 
-		fullName := filepath.Join(dir, filepath.FromSlash(path.Clean("/"+upath)))
+		fullName := filepath.Join(dir, filepath.FromSlash(path.Clean(upath)))
 
 		if fullName[len(fullName)-1] == '/' {
 			fullName = filepath.Join(fullName, indexPage)
@@ -143,15 +143,29 @@ func (s *Server) fileServer(dir string, override404 string) func(http.ResponseWr
 			if err != nil && !os.IsNotExist(err) {
 				w.WriteHeader(500)
 				w.Write([]byte("Internal error: can't open file: " + err.Error()))
+				return
 			}
-			fullName = filepath.Join(fullName, indexPage)
-			info, err := os.Stat(fullName)
+
+			info, err = os.Stat(fullName + ".html")
 			if err != nil || info.IsDir() {
 				if err != nil && !os.IsNotExist(err) {
 					w.WriteHeader(500)
 					w.Write([]byte("Internal error: can't open file: " + err.Error()))
+					return
+				}
+
+				info, err := os.Stat(filepath.Join(fullName, indexPage))
+				if err != nil || info.IsDir() {
+					if err != nil && !os.IsNotExist(err) {
+						w.WriteHeader(500)
+						w.Write([]byte("Internal error: can't open file: " + err.Error()))
+					}
+				} else {
+					fullName = filepath.Join(fullName, indexPage)
+					valid = true
 				}
 			} else {
+				fullName = fullName + ".html"
 				valid = true
 			}
 		} else {

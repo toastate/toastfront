@@ -36,9 +36,13 @@ all: build
 build: $(BUILDDIR)
 	@cd $(CURDIR)/cmd/toastfront && go build && mv -f toastfront $(BUILDDIR)
 
-.PHONY: test
-test: build
+.PHONY: test-build
+test-build: build
 	@cd $(CURDIR)/example && $(BUILDDIR)/toastfront build
+
+.PHONY: test-serve
+test-serve: build
+	@cd $(CURDIR)/example && $(BUILDDIR)/toastfront serve
 
 $(BUILDDIR):
 	@mkdir -p $(BUILDDIR)
