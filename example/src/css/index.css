@@ -3,5 +3,5 @@
     padding: 50px 0;
     max-width: 1600px;
     margin: 0 auto;
-    color: "{{.color__}}"
+    color: "{{.color__}}";
 }

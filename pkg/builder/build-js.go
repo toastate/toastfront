@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -14,7 +15,8 @@ import (
 )
 
 var JSBuilderImportRegexp = regexp.MustCompile(`(?m)^import "local:\/\/(.*)";$`)
-var JSBuilderImportFuncRegexp = regexp.MustCompile(`(?m)toastfront\.pagevars\((.+)\)`)
+var JSBuilderImportHTMLVarsFuncRegexp = regexp.MustCompile(`(?m)toastfront\.pagevars\((.+)\)`)
+var JSBuilderImportVarsFuncRegexp = regexp.MustCompile(`(?m)toastfront\.jsvars\(\)`)
 
 type JSBuilder struct {
 	builder *Builder
@@ -33,7 +35,7 @@ func (cb *JSBuilder) Init() error {
 	cb.folder = "js"
 	cb.extension = ".js"
 
-	if jsData, ok := config.Config.BuilderConfig["js"]; ok {
+	if jsData, ok := config.Config.BuilderConfig["javascript"]; ok {
 		if data, ok := jsData["vars_file"]; ok {
 			cb.VarsFile = data
 		}
@@ -164,8 +166,8 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 		return c
 	})
 
-	f = JSBuilderImportFuncRegexp.ReplaceAllFunc(f, func(match []byte) []byte {
-		p := string(JSBuilderImportFuncRegexp.FindSubmatch(match)[1])
+	f = JSBuilderImportHTMLVarsFuncRegexp.ReplaceAllFunc(f, func(match []byte) []byte {
+		p := string(JSBuilderImportHTMLVarsFuncRegexp.FindSubmatch(match)[1])
 
 		p = strings.Trim(p, "\"")
 		p = strings.Trim(p, "'")
@@ -179,7 +181,7 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 		htmlBuilder := cb.builder.fileBuilders["html"].(*HTMLBuilder)
 		pathData := htmlBuilder.GetPathDataDir(p)
 		jsm, _ := helpers.MarshalJson(pathData)
-		return jsm
+		return bytes.TrimRight(jsm, "\n ")
 
 		// fileData, err := os.Stat(filepath.Join(cb.builder.SrcDir, p))
 		// if err != nil {
@@ -188,6 +190,19 @@ func (cb *JSBuilder) ProcessAsByte(path string, file fs.FileInfo) ([]byte, error
 		// }
 
 		// return c
+	})
+
+	f = JSBuilderImportVarsFuncRegexp.ReplaceAllFunc(f, func(match []byte) []byte {
+		env := os.Environ()
+		for i := 0; i < len(env); i++ {
+			spl := strings.Split(env[i], "=")
+			if len(spl) == 2 {
+				cb.data[spl[0]] = spl[1]
+			}
+		}
+
+		jsm, _ := helpers.MarshalJson(cb.data)
+		return bytes.TrimRight(jsm, "\n ")
 	})
 
 	return f, nil

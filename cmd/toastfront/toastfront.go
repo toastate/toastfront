@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/alecthomas/kong"
-	"github.com/toastate/toastfront/internal/builder"
-	"github.com/toastate/toastfront/internal/server"
 	"github.com/toastate/toastfront/internal/tlogger"
+	"github.com/toastate/toastfront/pkg/builder"
 	"github.com/toastate/toastfront/pkg/config"
+	"github.com/toastate/toastfront/pkg/server"
 )
 
 var CLI struct {
@@ -20,8 +20,11 @@ var CLI struct {
 }
 
 type CommandBuild struct {
-	SrcDir   string `help:"Source directory." type:"existingdir"`
-	BuildDir string `help:"Build output."`
+	SrcDir   string            `help:"Source directory." type:"existingdir"`
+	BuildDir string            `help:"Build output."`
+	Env      map[string]string `short:"e" help:"overwrite environment variable"`
+	UnsetEnv []string          `short:"u" help:"helper to unset environment variables from the process"`
+	ClearEnv bool              `short:"c" help:"helper to clear all environment variable from the process"`
 
 	Verbose int `short:"v" help:"Print verbose output." type:"counter"`
 }
@@ -71,6 +74,24 @@ func (r *CommandBuild) Run(ctx *kong.Context) error {
 		r.BuildDir = "build"
 	}
 
+	if r.ClearEnv {
+		os.Clearenv()
+	} else if len(r.UnsetEnv) > 0 {
+		for i := 0; i < len(r.UnsetEnv); i++ {
+			err := os.Unsetenv(r.UnsetEnv[i])
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for k, v := range r.Env {
+		err := os.Setenv(k, v)
+		if err != nil {
+			return err
+		}
+	}
+
 	buildtool := builder.NewBuilder(r.SrcDir, r.BuildDir, ".")
 
 	err := buildtool.Init()
@@ -78,7 +99,7 @@ func (r *CommandBuild) Run(ctx *kong.Context) error {
 		return err
 	}
 
-	err = buildtool.Build()
+	err = buildtool.Build(&builder.BuilderOpts{})
 	if err != nil {
 		os.Exit(1)
 	}

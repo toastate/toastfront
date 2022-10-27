@@ -5,6 +5,8 @@ import (
 )
 
 type Builder struct {
+	opts *BuilderOpts
+
 	initialized bool
 
 	rootFolder string
@@ -23,6 +25,9 @@ type Builder struct {
 
 	isSubBuilder bool
 	subBuilders  map[string]*Builder // Used in multi lang scenarios
+}
+
+type BuilderOpts struct {
 }
 
 func NewBuilder(srcDir, buildDir, rootFolder string) *Builder {

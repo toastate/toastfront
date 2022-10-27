@@ -38,7 +38,7 @@ build: $(BUILDDIR)
 
 .PHONY: test-build
 test-build: build
-	@cd $(CURDIR)/example && $(BUILDDIR)/toastfront build
+	@cd $(CURDIR)/example && TOASTFRONT_TEST_ENV="TESTENV" $(BUILDDIR)/toastfront build
 
 .PHONY: test-serve
 test-serve: build

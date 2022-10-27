@@ -109,7 +109,17 @@ func (cb *HTMLBuilder) RewritePath(path string) string {
 
 func (cb *HTMLBuilder) GetPathData(path string) map[string]interface{} {
 	varsDir := path[:len(path)-len(cb.extension)]
-	return cb.GetPathDataDir(varsDir)
+	out := cb.GetPathDataDir(varsDir)
+
+	env := os.Environ()
+	for i := 0; i < len(env); i++ {
+		spl := strings.Split(env[i], "=")
+		if len(spl) == 2 {
+			out[spl[0]] = spl[1]
+		}
+	}
+
+	return out
 }
 
 func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {

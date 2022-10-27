@@ -90,6 +90,14 @@ func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 
 	// wr := filewriter.Writer("text/css", of)
 
+	env := os.Environ()
+	for i := 0; i < len(env); i++ {
+		spl := strings.Split(env[i], "=")
+		if len(spl) == 2 {
+			cb.data[spl[0]] = spl[1]
+		}
+	}
+
 	if config.Config.UnsafeVars {
 		t, err := ttemplate.New(path).Delims(`"{{`, `}}"`).Parse(string(f))
 		if err != nil {
