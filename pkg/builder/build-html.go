@@ -50,37 +50,6 @@ func (cb *HTMLBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.srcDir, cb.varsFolder)
-
-	{
-		varsFile := filepath.Join(varsPath, "common.json")
-		f, err := os.Open(varsFile)
-		if err == nil {
-			err = json.NewDecoder(f).Decode(&cb.baseData)
-			f.Close()
-			if err != nil {
-				tlogger.Error("builder", "html", "msg", "Can't decode html vars file", "file", varsFile, "err", err)
-				return err
-			}
-		}
-	}
-	{
-		varsFile := filepath.Join(varsPath, "lang-"+cb.builder.currentLanguage+".json")
-		f, err := os.Open(varsFile)
-		if err == nil {
-			tmp := make(map[string]interface{})
-			err = json.NewDecoder(f).Decode(&tmp)
-			f.Close()
-			if err != nil {
-				tlogger.Error("builder", "html", "msg", "Can't decode html vars file", "file", varsFile, "err", err)
-				return err
-			}
-			for k, v := range tmp {
-				cb.baseData[k] = v
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -171,6 +140,41 @@ func (cb *HTMLBuilder) GetPathDataDir(varsDir string) map[string]interface{} {
 
 func (cb *HTMLBuilder) Process(path string, file fs.FileInfo) error {
 	tlogger.Debug("builder", "html", "msg", "processing", "file", path)
+
+	if cb.depth == 0 {
+		cb.baseData = map[string]interface{}{}
+
+		varsPath := filepath.Join(cb.builder.srcDir, cb.varsFolder)
+
+		{
+			varsFile := filepath.Join(varsPath, "common.json")
+			f, err := os.Open(varsFile)
+			if err == nil {
+				err = json.NewDecoder(f).Decode(&cb.baseData)
+				f.Close()
+				if err != nil {
+					tlogger.Error("builder", "html", "msg", "Can't decode html vars file", "file", varsFile, "err", err)
+					return err
+				}
+			}
+		}
+		{
+			varsFile := filepath.Join(varsPath, "lang-"+cb.builder.currentLanguage+".json")
+			f, err := os.Open(varsFile)
+			if err == nil {
+				tmp := make(map[string]interface{})
+				err = json.NewDecoder(f).Decode(&tmp)
+				f.Close()
+				if err != nil {
+					tlogger.Error("builder", "html", "msg", "Can't decode html vars file", "file", varsFile, "err", err)
+					return err
+				}
+				for k, v := range tmp {
+					cb.baseData[k] = v
+				}
+			}
+		}
+	}
 
 	f, err := cb.ProcessAsByte(path, file)
 	if err != nil {

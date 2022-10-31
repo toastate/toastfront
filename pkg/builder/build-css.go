@@ -45,19 +45,6 @@ func (cb *CSSBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.varsFile)
-	f, err := os.Open(varsPath)
-	if err != nil {
-		tlogger.Warn("builder", "css", "msg", "Can't open css vars file", "file", varsPath, "err", err)
-	} else {
-		defer f.Close()
-		err = json.NewDecoder(f).Decode(&cb.data)
-		if err != nil {
-			tlogger.Error("builder", "css", "msg", "Can't decode css vars file", "file", varsPath, "err", err)
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -75,6 +62,23 @@ func (cb *CSSBuilder) IsCssFile(path string, file fs.FileInfo) bool {
 
 func (cb *CSSBuilder) Process(path string, file fs.FileInfo) error {
 	tlogger.Debug("builder", "css", "msg", "processing", "file", path)
+
+	if cb.depth == 0 {
+		cb.data = map[string]interface{}{}
+	}
+
+	varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.varsFile)
+	vf, err := os.Open(varsPath)
+	if err != nil {
+		tlogger.Warn("builder", "css", "msg", "Can't open css vars file", "file", varsPath, "err", err)
+	} else {
+		defer vf.Close()
+		err = json.NewDecoder(vf).Decode(&cb.data)
+		if err != nil {
+			tlogger.Error("builder", "css", "msg", "Can't decode css vars file", "file", varsPath, "err", err)
+			return err
+		}
+	}
 
 	f, err := cb.ProcessAsByte(path, file)
 	if err != nil {

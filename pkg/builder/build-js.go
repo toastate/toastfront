@@ -47,19 +47,6 @@ func (cb *JSBuilder) Init() error {
 		}
 	}
 
-	varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.VarsFile)
-	f, err := os.Open(varsPath)
-	if err != nil {
-		tlogger.Warn("builder", "js", "msg", "Can't open js vars file", "file", varsPath, "err", err)
-	} else {
-		defer f.Close()
-		err = json.NewDecoder(f).Decode(&cb.data)
-		if err != nil {
-			tlogger.Error("builder", "js", "msg", "Can't decode js vars file", "file", varsPath, "err", err)
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -77,6 +64,25 @@ func (cb *JSBuilder) IsJsFile(path string, file fs.FileInfo) bool {
 
 func (cb *JSBuilder) Process(path string, file fs.FileInfo) error {
 	tlogger.Debug("builder", "js", "msg", "processing", "file", path)
+
+	if cb.depth == 0 {
+		cb.data = map[string]interface{}{}
+
+		varsPath := filepath.Join(cb.builder.srcDir, cb.folder, cb.VarsFile)
+		vf, err := os.Open(varsPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				tlogger.Warn("builder", "js", "msg", "Can't open js vars file", "file", varsPath, "err", err)
+			}
+		} else {
+			defer vf.Close()
+			err = json.NewDecoder(vf).Decode(&cb.data)
+			if err != nil {
+				tlogger.Error("builder", "js", "msg", "Can't decode js vars file", "file", varsPath, "err", err)
+				return err
+			}
+		}
+	}
 
 	f, err := cb.ProcessAsByte(path, file)
 	if err != nil {
