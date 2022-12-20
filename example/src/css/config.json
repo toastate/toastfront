@@ -1,14 +1,15 @@
 {
-    "width__": "",
-    "height__": "",
+  "width__": "",
+  "height__": "",
 
-    "color__": "red",
+  "color__": "black",
+  "primary": "#0148ff",
+  "secondary": "#009cf1",
+  "text__color": "",
 
-    "text__color": "",
-
-    "maxwidth__viewport_5": "575.98px",
-    "maxwidth__viewport_7": "767.98px",
-    "maxwidth__viewport_9": "991.98px",
-    "maxwidth__viewport_11": "1199.98px",
-    "maxwidth__viewport_14": "1399.98px"
+  "maxwidth__viewport_5": "575.98px",
+  "maxwidth__viewport_7": "767.98px",
+  "maxwidth__viewport_9": "991.98px",
+  "maxwidth__viewport_11": "1199.98px",
+  "maxwidth__viewport_14": "1399.98px"
 }

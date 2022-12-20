@@ -1,6 +1,7 @@
 @import "local://includes/common/reset.css";
 @import "local://includes/common/fonts.css";
 @import "local://includes/header.css";
+@import "local://includes/body.css";
 @import "local://includes/footer.css";
 
 .disabled {
