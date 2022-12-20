@@ -93,6 +93,10 @@ if err != nil {
 }
 ```
 
+# Contributing
+
+PRs are always welcome! To get started, join our [Discord](https://discord.gg/NC8sgX6E75).
+
 ## Help
 
 Please open an issue if you need help using toastfront
