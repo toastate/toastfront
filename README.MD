@@ -1,14 +1,12 @@
 # Toastfront
 
-The simple front-end build tool used by the [Toastate.com](https://www.toastate.com) team 
+Toastfront is a simple and transparent front-end build system designed primarily for vanilla JavaScript projects. It is built with a focus on file imports and internationalization support. Toastfront has no dependencies and generates vanilla HTML, CSS, and JS files, which provides full native performance in the browser.
 
-## Description
+Toastfront differs from frameworks like ReactJS or AngularJS. While React and Angular are comprehensive libraries or frameworks for building complex, interactive web applications with a focus on UI components and data management, Toastfront is primarily focused on vanilla websites and on simplifying the process of importing and bundling HTML, CSS, and JavaScript files.
 
-Toastfront is a simple front-end build system relying on file imports and with internationalisation out of the box.
+Toastfront is designed to work mainly with vanilla JavaScript projects but should also work with other projects that don't require transpiling. It does not provide the same level of abstraction, structure, or built-in components as React or Angular. Instead, Toastfront is intended to help developers organize their projects and streamline the build process with features like HTML templating, internationalization, and file imports.
 
-Toastfront is made to be used mostly with vanilla javascript in mind but should work with every project that doesn't need transpiling.
-
-It is transparent because it has no dependencies and outputs vanilla HTML/css/js. It provides code with full native performance in the browser.
+In summary, while ReactJS and AngularJS are full-featured frameworks for creating rich web applications, Toastfront is a lightweight build system aimed at simplifying the process of bundling and organizing front-end assets for projects that do not require the complexity of a full-fledged framework.
 
 ## Getting started - Command Line Interface
 
