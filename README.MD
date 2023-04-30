@@ -18,7 +18,7 @@ Or clone it and build it from scratch using `go build cmd/toastfront/toastfront.
 
 ### Setup your project
 
-Either start from scratch or by copying the `exemple` folder
+Either start from scratch or by copying the `example` folder
 
 Create a `toastatfront.json` file at the root of your project [toastfront.json documentation](https://github.com/toastate/toastfront/wiki/toastfront.json-structure)
 
